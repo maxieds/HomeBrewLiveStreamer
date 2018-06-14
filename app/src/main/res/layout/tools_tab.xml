@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<GridLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:columnCount="2">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Antibanding: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsAntibandSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/AntibandingVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Video Effects: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsEffectsSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/EffectsVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Camera Flash: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsCameraFlashSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/CameraFlashVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Focus Options: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsFocusSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/FocusVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Scene Options: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsSceneSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/SceneVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="White Balance: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsWhiteBalanceSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/WhiteBalanceVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Camera Rotation (Degrees): "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsRotationSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/RotationOrientationVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+</GridLayout>

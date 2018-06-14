@@ -1,0 +1,162 @@
+<resources>
+    <string name="app_name">Home Brew Live Streamer</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="apphtmlheader">&lt;html>&lt;head>&lt;style>a { text-decoration: underline; color: %%ABOUTLINKCOLOR%%; font-weight: bold; font-style: italic; }&lt;/style>&lt;/head>&lt;body></string>
+    <string name="apphtmlfooter">&lt;/body>&lt;/html></string>
+    <string name="AboutHTML">
+        &lt;h1>Application Build Details:&lt;/h1>
+        &lt;b>Version Name:&lt;/b> %%appVersionName%%&lt;br/>
+        &lt;b>Version Code:&lt;/b> %%appVersionCode%%&lt;br/>
+        &lt;b>Build Timestamp:&lt;/b> %%appBuildTimestamp%%&lt;br/>
+
+        &lt;h1>Why Yet Another Live Streaming App?&lt;/h1>
+
+        I needed a configurable, open source live video streaming application for my Android phone
+        that will enable me to stream live audio and video data to several different sources online.
+        In particular, the Smashing Pumpkins are coming to town and I want a reasonable way to remember
+        the concert and replay it after the adrenaline rush of the rock concert and screwdrivers
+        wears off. Being a code hacker by nature I decided to roll my own solution to this problem.
+        There are already many social-media-based apps that allow you to do this, but the storage and
+        postprocessing (i.e., saving your audio / video to external devices) of the streamed media
+        options can be restrictive and limiting. There is already another (in)famous live streaming
+        app for Android which allows users to stream live media directly to a BitTorent stream, though
+        the last I checked off this app it had been swiftly removed from the Play Store for obviously
+        being too convenient and piss-off-the-MPAA-like for users to get officially sanctioned access
+        to. I\'m too weary of installing APKs from undocumented sources these days, so this is the
+        best option for my needs of an app like this. I am providing it and signed APK downloads on
+        GitHub (as well as on Play Store) as open source software that users can simply employ in
+        their homebrew streaming operations (see disclaimer below) or hack and tweak to perfection
+        for themselves.
+
+        &lt;h1>Licensing and Free Versus Paid Versions:&lt;/h1>
+
+        This application and its Java / C++ source is provided free of charge to users and
+        other entities for &lt;i>non-commercial usage only&lt;/i>. Those users who would like to
+        use this application for commercially motivated events and monitoring should contact the
+        developer using the information below to work out an appropriate financial arrangement.
+        At some point, depending on how many users of the non-commercial free app I get, some of the
+        features of the app may be disabled in the -free flavor of the app on Play Store.
+        I develop these apps in my free time.
+        By all means if you
+        like, or use, or particularly appreciate this application and its open source
+        availability policy consider making a donation in the name of the developer\'s
+        "good scotch fund" which incidentally tends to lead to productive work on apps like these
+        getting written faster :) I can also be contracted to customize a specific revision of the
+        app for closed-loop commercial purposes. Please just contact me and I can see what the
+        timeline and developer fees would be for coding up your custom application.
+
+        &lt;h1>Developer Contact and E-Mail:&lt;/h1>
+
+        You can email me about bug reports, commercial operations, feature requests and the like at maxieds@gmail.com.
+        Please if you like and use this app drop me a line and let me know about it and what you use it for.
+
+        &lt;h1>GitHub Repository Page and Documentation:&lt;/h1>
+
+        &lt;ul>
+           &lt;li>&lt;a href="https://github.com/maxieds/HomeBrewStreamer">HomeBrewLiveStreamer project&lt;/a> (on GitHub)&lt;/li>
+           &lt;li>&lt;a href="https://github.com/maxieds/HomeBrewLiveStreamer/wiki/">GitHub wiki page documentation&lt;/a>
+        &lt;/ul>
+
+        &lt;h1>Disclaimers: &lt;/h1>
+
+        This application is made freely available to its users for legitimate purposes and
+        strictly legal uses only. It is not an app for spying on others nor intended to imply
+        that nefarious users can bypass the rights of others. Make sure that you have permission
+        to record all streamed audio / video you run through this application and that any
+        post-processed versions of this media do not violate any persons (or big bad company with a
+        large team of landsharks or major associations) rights nor copyright.
+        In short, a good rule of thumb (in life and in advice from man pages) is just not to be an a$$h*le.&lt;br/>&lt;br/>
+
+        All of that being said I will briefly justify why I think that my original presupposed
+        usage and reasons for crafting this application are legitimate. Note first that this
+        application does not allow users to directly post their streams to repositories like You
+        Tube. In fact it only allows them to effectively archive their personal experiences and
+        scenic whereabouts for later purposes. In my case, I legitimately paid for rights to
+        view a concert. This implies a contract that I may participate in the experience time-shifted
+        to a later point in time. Your milage may vary depending on how much of your favorite
+        Pumpkins concert footage ends up actually getting posted to YouTube
+        (&lt;i>See above life heuristic again&lt;/i>).
+
+        &lt;h1>ENJOY THE APP!&lt;h1/>
+        Sincerely, from the developers and friends who helped to test the app.
+    </string>
+
+    <string-array name="AntibandingVideoOptions">
+        <item>ANTIBANDING_OFF</item>
+        <item>ANTIBANDING_AUTO</item>
+        <item>ANTIBANDING_50HZ</item>
+        <item>ANTIBANDING_60HZ</item>
+    </string-array>
+
+    <string-array name="EffectsVideoOptions">
+        <item>EFFECT_NONE</item>
+        <item>EFFECT_AQUA</item>
+        <item>EFFECT_BLACKBOARD</item>
+        <item>EFFECT_MONO</item>
+        <item>EFFECT_NEGATIVE</item>
+        <item>EFFECT_POSTERIZE</item>
+        <item>EFFECT_SEPIA</item>
+        <item>EFFECT_SOLARIZE</item>
+        <item>EFFECT_WHITEBOARD</item>
+    </string-array>
+
+    <string-array name="CameraFlashVideoOptions">
+        <item>FLASH_MODE_OFF</item>
+        <item>FLASH_MODE_AUTO</item>
+        <item>FLASH_MODE_ON</item>
+        <item>FLASH_MODE_RED_EYE</item>
+        <item>FLASH_MODE_TORCH</item>
+    </string-array>
+
+    <string-array name="FocusVideoOptions">
+        <item>FOCUS_MODE_AUTO</item>
+        <item>FOCUS_MODE_CONTINUOUS_PICTURE</item>
+        <item>FOCUS_MODE_CONTINUOUS_VIDEO</item>
+        <item>FOCUS_MODE_EDOF</item>
+        <item>FOCUS_MODE_FIXED</item>
+        <item>FOCUS_MODE_INFINITY</item>
+        <item>FOCUS_MODE_MACRO</item>
+    </string-array>
+
+    <string-array name="SceneVideoOptions">
+        <item>SCENE_MODE_AUTO</item>
+        <item>SCENE_MODE_BARCODE</item>
+        <item>SCENE_MODE_BEACH</item>
+        <item>SCENE_MODE_CANDLELIGHT</item>
+        <item>SCENE_MODE_FIREWORKS</item>
+        <item>SCENE_MODE_HDR</item>
+        <item>SCENE_MODE_LANDSCAPE</item>
+        <item>SCENE_MODE_NIGHT</item>
+        <item>SCENE_MODE_NIGHT_PORTRAIT</item>
+        <item>SCENE_MODE_PARTY</item>
+        <item>SCENE_MODE_PORTRAIT</item>
+        <item>SCENE_MODE_SNOW</item>
+        <item>SCENE_MODE_SPORTS</item>
+        <item>SCENE_MODE_STEADYPHOTO</item>
+        <item>SCENE_MODE_SUNSET</item>
+        <item>SCENE_MODE_THEATRE</item>
+    </string-array>
+
+    <string-array name="WhiteBalanceVideoOptions">
+        <item>WHITE_BALANCE_AUTO</item>
+        <item>WHITE_BALANCE_CLOUDY_DAYLIGHT</item>
+        <item>WHITE_BALANCE_DAYLIGHT</item>
+        <item>WHITE_BALANCE_FLUORESCENT</item>
+        <item>WHITE_BALANCE_INCANDESCENT</item>
+        <item>WHITE_BALANCE_SHADE</item>
+        <item>WHITE_BALANCE_TWILIGHT</item>
+        <item>WHITE_BALANCE_WARM_FLUORESCENT</item>
+    </string-array>
+
+    <string-array name="RotationOrientationVideoOptions">
+        <item>90</item>
+        <item>180</item>
+        <item>270</item>
+        <item>0</item>
+    </string-array>
+
+
+
+
+</resources>

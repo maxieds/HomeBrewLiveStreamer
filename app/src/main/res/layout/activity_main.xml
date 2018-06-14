@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:logo="@drawable/streaminglogo32"
+            android:title="@string/app_name"
+            app:titleTextAppearance="@style/titleText"
+            app:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+            app:contentInsetStartWithNavigation="0dp"
+            app:contentInsetStart="0dp"
+            app:contentInsetEnd="0dp"
+            app:contentInsetLeft="0dp"
+            app:contentInsetRight="0dp"
+            app:titleMargin="2dp"
+            android:background="@color/colorPrimary"
+            />
+
+    </android.support.design.widget.AppBarLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/colorPrimaryDark" />
+
+    <LinearLayout
+        style="@style/AppTheme"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@color/colorPrimaryDark"
+        android:orientation="vertical">
+
+        <TabHost
+            android:id="@+id/tab_host"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="0px"
+            android:padding="0dp"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.523"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintVertical_bias="1.0">
+
+            <android.support.design.widget.TabLayout
+                android:id="@+id/tab_layout"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorAccent"
+                android:visibility="visible"
+                app:tabGravity="fill"
+                app:tabIndicatorColor="@color/colorPrimaryDark"
+                app:tabIndicatorHeight="3dp"
+                app:tabMaxWidth="0dp"
+                app:tabMinWidth="0dp"
+                app:tabMode="fixed"
+                app:tabPaddingEnd="-1dp"
+                app:tabPaddingStart="-1dp"
+                app:tabTextAppearance="?android:attr/textAppearanceMedium">
+
+            </android.support.design.widget.TabLayout>
+
+        </TabHost>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/colorPrimaryDark" />
+
+        <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/tab_pager"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:layout_weight="1.0"
+            android:background="@color/colorPrimary"
+            android:padding="8dp"
+            tools:context="net.voidynullness.android.tabitytabs.TabLayoutActivity">
+
+        </android.support.v4.view.ViewPager>
+
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimaryDark"
+        android:columnCount="2"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/statsRecordMode"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsrecordmode24"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsMemDisk"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsmemdisk24"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsDuration"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsduration"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsBattery"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsbattery24"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsFileOutput"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsfile"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsVideo"
+            style="@style/StatsUIText"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsvideo24"
+            android:singleLine="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+        <TextView
+            android:id="@+id/statsAudio"
+            android:layout_width="wrap_content"
+            android:drawableLeft="@drawable/statsaudio24"
+            android:singleLine="true"
+            style="@style/StatsUIText"/>
+
+    </GridLayout>
+
+</LinearLayout>
