@@ -1,5 +1,6 @@
 package com.maxieds.codenamepumpkinsconcert;
 
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -66,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     };
     public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
     public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
+    public static boolean setDoNotDisturb = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,9 +152,17 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.RECORD_AUDIO",
                 "android.permission.RECORD_VIDEO",
                 "android.permission.INTERNET",
+                "android.permission.ACCESS_NOTIFICATION_POLICY"
         };
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
+
+        // and special case for the particularly important one of silencing the phone when recording:
+        NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (!notifyManager.isNotificationPolicyAccessGranted()) {
+            Intent intent = new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+            startActivity(intent);
+        }
 
         // start a timer to update the stats UI on the screen periodically:
         RuntimeStats.updateStatsUI(true);
@@ -169,8 +179,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        //Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-        //stopService(stopRecordingService);
+        if(AVRecordingService.localService != null) {
+            AVRecordingService.localService.previewOff();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(AVRecordingService.localService != null) {
+            AVRecordingService.localService.previewOn();
+        }
     }
 
     public void actionButtonCovertModeToLive(View button) {
@@ -202,7 +221,8 @@ public class MainActivity extends AppCompatActivity {
             if(!AVRecordingService.isRecording()) {
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
                 startRecordingService.setAction("RECORD_AUDIO_ONLY");
-                startService(startRecordingService);
+                //startService(startRecordingService);
+                startForegroundService(startRecordingService);
                 bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
                 startRecordingService.putExtra("RECORDOPTS", navAction);
                 RuntimeStats.updateStatsUI(true);

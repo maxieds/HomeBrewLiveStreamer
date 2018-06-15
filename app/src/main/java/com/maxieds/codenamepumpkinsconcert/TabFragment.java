@@ -121,7 +121,8 @@ public class TabFragment extends Fragment {
         else if(tabNumber == TAB_LIVE_PANEL) {
 
             MainActivity.videoPreview = (SurfaceView) inflatedView.findViewById(R.id.camera_preview);
-            MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.previewclock256);
+            //MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.previewclock256);
+            MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
             //MainActivity.videoPreview.setBackgroundColor(MainActivity.runningActivity.getResources().getColor(R.color.colorPrimaryDark));
             MainActivity.videoPreview.setBackgroundDrawable(MainActivity.videoPreviewBGOverlay);
             //MainActivity.videoPreview.getBackground().setAlpha(0);
@@ -150,6 +151,26 @@ public class TabFragment extends Fragment {
             MainActivity.videoOptsScene = (Spinner) inflatedView.findViewById(R.id.videoOptsSceneSpinner);
             MainActivity.videoOptsWhiteBalance = (Spinner) inflatedView.findViewById(R.id.videoOptsWhiteBalanceSpinner);
             MainActivity.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
+
+            AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    if(AVRecordingService.localService != null) {
+                        AVRecordingService.localService.updateVideoFeedParams();
+                    }
+                }
+                public void onNothingSelected(AdapterView<?> adapterView) {
+                    return;
+                }
+            };
+
+            MainActivity.videoOptsAntiband.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsEffects.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsCameraFlash.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsFocus.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsScene.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
+            MainActivity.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
+
         }
         else if(tabNumber == TAB_SETTINGS) {}
         else if(tabNumber == TAB_ABOUT) {

@@ -38,33 +38,21 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-        // The Surface has been created, now tell the camera where to draw the preview.
         Log.i(TAG, "surfaceCreated");
         bSurfaceCreated = true;
-        //MainActivity.videoPreview = this;
         try {
             cameraInstance.setPreviewDisplay(holder);
         } catch(IOException ioe) {
             Log.e(TAG, ioe.getMessage());
         }
         cameraInstance.startPreview();
-        //avFeed.setPreviewDisplay(holder.getSurface());
-        //try {
-        //    avFeed.prepare();
-        //    avFeed.start();
-        //} catch(IOException ioe) {
-        //    Log.w(TAG, ioe.getMessage());
-        //}
         Log.i(TAG, "AV Feed started!");
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
-        // empty. Take care of releasing the Camera preview in your activity.
-        //throw new InterruptedException();
-        //Thread.currentThread().interrupt();
         Log.i(TAG, "surfaceDestroyed()");
         bSurfaceCreated = false;
-        cameraInstance.stopPreview();
+        AVRecordingService.localService.previewOff();
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
