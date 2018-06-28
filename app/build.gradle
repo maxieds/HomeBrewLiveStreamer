@@ -15,7 +15,7 @@ android {
         targetSdkVersion 27
         compileSdkVersion 27
         versionCode 1
-        versionName "0.0.1"
+        versionName "0.0.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {

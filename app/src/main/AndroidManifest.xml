@@ -9,8 +9,15 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.RECORD_VIDEO" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <!--<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>-->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BATTERY_STATS"/>
 
     <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature android:name="android.location" android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -29,9 +36,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".AVRecordingService"
+        <service android:name="AVRecordingService"
             android:exported="false"
-            android:label="Audio / Video Recording Service" />
+            android:label="Home Brew Audio / Video Recording Service" />
             <!--android:description="Controls the background AV recording tasks in the Home Brew Simple Live Streamer app."-->
     </application>
 

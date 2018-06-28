@@ -125,4 +125,55 @@
         android:spinnerMode="dialog"
         />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Audio Playback Effects: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/audioOptsPlaybackEffectsSpinner"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/AudioEffectTypePlaybackOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="Media Content Type: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsContentTypeDesc"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/ContentTypeDescVideoPlaybackOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:singleLine="true"
+        android:text="A/V Recording Quality: "
+        style="@style/StatsUIText"/>
+
+    <Spinner
+        android:id="@+id/videoOptsRecordingQuality"
+        android:layout_width="210dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:entries="@array/RecordingQualityVideoOptions"
+        android:gravity="right|center_vertical"
+        android:popupBackground="@color/colorAccentHighlight"
+        android:spinnerMode="dialog"
+        />
+
 </GridLayout>

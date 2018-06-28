@@ -5,11 +5,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
 import android.text.Layout;
 import android.text.TextUtils;
@@ -32,6 +34,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.hardware.Camera;
 
+import static android.os.Process.myPid;
+import static android.os.Process.myUid;
 import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_ABOUT;
 import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_COVERT_MODE;
 import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_LIVE_PANEL;
@@ -67,7 +71,9 @@ public class MainActivity extends AppCompatActivity {
     };
     public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
     public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
+    public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
     public static boolean setDoNotDisturb = true;
+    public static boolean AVRECORD_SERVICE_RUNNING = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,10 +158,20 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.RECORD_AUDIO",
                 "android.permission.RECORD_VIDEO",
                 "android.permission.INTERNET",
-                "android.permission.ACCESS_NOTIFICATION_POLICY"
+                "android.permission.ACCESS_NOTIFICATION_POLICY",
+                "android.permission.BLUETOOTH",
+                //"android.permission.BLUETOOTH_ADMIN",
+                "android.permission.WAKE_LOCK",
+                "android.permission.VIBRATE",
+                "android.permission.ACCESS_COARSE_LOCATION",
+                "android.permission.BATTERY_STATS"
         };
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
+        ActivityCompat.requestPermissions(this, permissions, 200);
+        for(int p = 0; p < permissions.length; p++) {
+            Log.i(TAG, permissions[p] + ": " + (hasPermission(permissions[p]) ? "YES" : "NOT APPROVED"));
+        }
 
         // and special case for the particularly important one of silencing the phone when recording:
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -192,6 +208,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING) {
+            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
+            stopService(stopRecordingService);
+            //unbindService(recordServiceConn);
+            NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
+        }
+        writeLoggingData("INFO", "Exiting application.");
+    }
+
+    private boolean hasPermission(String permission) {
+        return getApplicationContext().checkPermission(permission, myPid(), myUid()) == PackageManager.PERMISSION_GRANTED;
+    }
+
     public void actionButtonCovertModeToLive(View button) {
         getSupportActionBar().setTitle(getString(R.string.app_name));
         viewPager.setCurrentItem(TAB_LIVE_PANEL);
@@ -205,48 +238,85 @@ public class MainActivity extends AppCompatActivity {
         String navAction = ((Button) button).getTag().toString();
         if(navAction.equals("RECORD_VIDEO")) {
             if(!AVRecordingService.isRecording()) {
+                AVRecordingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_VIDEO;
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
                 startRecordingService.setAction("RECORD_VIDEO");
                 startRecordingService.putExtra("RECORDOPTS", navAction);
+                //startForegroundService(startRecordingService);
                 startService(startRecordingService);
-                bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
-                RuntimeStats.updateStatsUI(true);
+                //bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
+            }
+            else if(AVRecordingService.isPaused()) {
+                if(AVRecordingService.isRecordingAudioOnly()) {
+                    AVRecordingService.localService.resumeRecording();
+                    AVRecordingService.localService.recordVideoNow(videoOptsQuality.getSelectedItem().toString());
+                }
+                else {
+                    AVRecordingService.localService.resumeRecording();
+                }
             }
             else if(AVRecordingService.isRecordingAudioOnly()) {
                 AVRecordingService.localService.toggleAudioVideo(DEFAULT_RECORDING_QUALITY);
-                RuntimeStats.updateStatsUI(true);
             }
+            RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
+            RuntimeStats.updateStatsUI(true);
         }
         else if(navAction.equals("RECORD_AUDIO_ONLY")) {
             if(!AVRecordingService.isRecording()) {
+                AVRecordingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_ONLY;
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
                 startRecordingService.setAction("RECORD_AUDIO_ONLY");
-                //startService(startRecordingService);
-                startForegroundService(startRecordingService);
-                bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
+                startService(startRecordingService);
+                //startForegroundService(startRecordingService);
+                //bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
                 startRecordingService.putExtra("RECORDOPTS", navAction);
-                RuntimeStats.updateStatsUI(true);
+            }
+            else if(AVRecordingService.isPaused()) {
+                if(!AVRecordingService.isRecordingAudioOnly()) {
+                    AVRecordingService.localService.resumeRecording();
+                    AVRecordingService.localService.recordAudioOnlyNow(videoOptsQuality.getSelectedItem().toString());
+                }
+                else {
+                    AVRecordingService.localService.resumeRecording();
+                }
             }
             else if(!AVRecordingService.isRecordingAudioOnly()) {
                 AVRecordingService.localService.toggleAudioVideo(DEFAULT_RECORDING_QUALITY);
-                RuntimeStats.updateStatsUI(true);
             }
+            RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
+            RuntimeStats.updateStatsUI(true);
         }
         else if(navAction.equals("PAUSE_RECORDING") && AVRecordingService.isRecording()) {
+            AVRecordingService.localService.pauseRecording();
+        }
+        else if(navAction.equals("STOP_RECORDING") && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
             stopService(stopRecordingService);
-            unbindService(recordServiceConn);
+            //unbindService(recordServiceConn);
             writeLoggingData("INFO", "Paused / stopped current recording session.");
+        }
+        else if(navAction.equals("PLAYBACK_RECORDING")) {
+            writeLoggingData("INFO", "Navigation option \"PLAY LAST\" is currently unsupported.");
         }
         else if(navAction.equals("STREAM_RECORDING")) {
             writeLoggingData("INFO", "Navigation option \"STREAM\" is currently unsupported.");
         }
 
+        if(AVRecordingService.getErrorState()) {
+            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
+            stopService(stopRecordingService);
+            //unbindService(recordServiceConn);
+            RuntimeStats.clear();
+            RuntimeStats.updateStatsUI(false);
+            Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
+        }
+        Log.i(TAG, "FILE PATH: " + AVRecordingService.LAST_RECORDING_FILEPATH);
+
     }
 
     public static void writeLoggingData(String msgPrefix, String msg) {
         String fullMessage = String.format(">> %s: %s\n", msgPrefix, msg);
-        tvLoggingMessages.setText(tvLoggingMessages.getText() + fullMessage);
+        //tvLoggingMessages.setText(tvLoggingMessages.getText() + fullMessage);
         //tvLoggingMessages.scrollTo(Math.min(tvLoggingMessages.getLineCount(), MAX_LOGGING_LINES), 0);
         Log.i(TAG, fullMessage.substring(2));
     }

@@ -18,14 +18,16 @@
         android:layout_height="5dp"
         android:background="@color/colorPrimaryDark" />
 
-    <LinearLayout
+    <GridLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:background="@color/colorAccentHighlight"
-        android:paddingHorizontal="10dp">
+        android:paddingHorizontal="10dp"
+        android:columnCount="3">
 
         <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorAccentHighlight"
@@ -37,40 +39,71 @@
             android:paddingHorizontal="5dp"/>
 
         <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorAccentHighlight"
             android:onClick="actionButtonHandleNavigation"
             android:tag="RECORD_AUDIO_ONLY"
-            android:text="REC AUDIO"
+            android:text="REC AUDIO ONLY"
             android:drawableLeft="@drawable/audioicon24v2"
             android:drawablePadding="4dp"
             android:paddingHorizontal="5dp"/>
 
         <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccentHighlight"
+            android:onClick="actionButtonHandleNavigation"
+            android:tag="STREAM_RECORDING"
+            android:text="LIVE STREAM"
+            android:drawableLeft="@drawable/streamicon24"
+            android:drawablePadding="4dp"
+            android:paddingHorizontal="5dp" />
+
+        <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccentHighlight"
+            android:onClick="actionButtonHandleNavigation"
+            android:tag="STOP_RECORDING"
+            android:text="STOP REC"
+            android:drawableLeft="@drawable/stopicon24"
+            android:drawablePadding="4dp"
+            android:paddingHorizontal="5dp"/>
+
+        <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorAccentHighlight"
             android:onClick="actionButtonHandleNavigation"
             android:tag="PAUSE_RECORDING"
-            android:text="PAUSE"
+            android:text="PAUSE REC"
             android:drawableLeft="@drawable/pauseicon24"
             android:drawablePadding="4dp"
             android:paddingHorizontal="5dp"/>
 
         <Button
-            android:layout_width="0dp"
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:elevation="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorAccentHighlight"
             android:onClick="actionButtonHandleNavigation"
-            android:tag="STREAM_RECORDING"
-            android:text="STREAM"
-            android:drawableLeft="@drawable/streamicon24"
+            android:tag="PLAYBACK_RECORDING"
+            android:text="PLAY LAST"
+            android:drawableLeft="@drawable/playicon24"
             android:drawablePadding="4dp"
-            android:paddingHorizontal="5dp"
-            android:layout_weight="1"/>
+            android:paddingHorizontal="5dp"/>
 
-    </LinearLayout>
+    </GridLayout>
 
     <View
         android:layout_width="match_parent"

@@ -52,6 +52,7 @@ public class RuntimeStats {
          Time currentTime = new Time();
          currentTime.setToNow();
          long diffms = currentTime.toMillis(true) - recordingStartTime.toMillis(true);
+         //long diffms = AVRecordingService.localService.getMediaTimestamp();
          SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss");
          Date diffTime = new Date();
          diffTime.setTime(diffms);
@@ -105,6 +106,15 @@ public class RuntimeStats {
          String recordMode = String.format("%s: %s", "Record Mode", getRecordingMode());
          String duration = String.format("%s: %s", "Record Duration", getRecordingUptime());
          String fileOutput = String.format("%s: %s", "File", getLoggingFilePath());
+         String appStatusString = "";
+         if(AVRecordingService.getErrorState())
+              appStatusString = AVRecordingService.LAST_ERROR_MESSAGE;
+         else if(AVRecordingService.isPaused())
+             appStatusString = "PAUSED / ";
+         else if(AVRecordingService.isRecording())
+             appStatusString = "REC / ";
+         appStatusString += AVRecordingService.LAST_ERROR_MESSAGE;
+         String runtimeAlertStatus = String.format("%s: %s", AVRecordingService.getErrorState() ? "Error" : "Status", appStatusString);
          String memDisk = String.format("%s: %s", "Mem / Disk", getSpaceUsedRemaining());
          String battery = String.format("%s: %s", "Battery Used", getBatteryPercentUsed());
          String video = String.format("%s %s", "", getVideoRecordingSummary());
@@ -113,6 +123,7 @@ public class RuntimeStats {
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsRecordMode)).setText(recordMode);
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsDuration)).setText(duration);
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsFileOutput)).setText(fileOutput);
+        ((TextView) MainActivity.runningActivity.findViewById(R.id.statsAlert)).setText(runtimeAlertStatus);
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsMemDisk)).setText(memDisk);
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsBattery)).setText(battery);
         ((TextView) MainActivity.runningActivity.findViewById(R.id.statsVideo)).setText(video);

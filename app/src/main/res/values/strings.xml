@@ -156,6 +156,47 @@
         <item>0</item>
     </string-array>
 
+    <string-array name="ContentTypeDescVideoPlaybackOptions">
+        <item>CONTENT_TYPE_MUSIC</item>
+        <item>CONTENT_TYPE_MOVIE</item>
+        <item>CONTENT_TYPE_GAME</item>
+        <item>CONTENT_TYPE_VOICE</item>
+    </string-array>
+
+    <string-array name="AudioEffectTypePlaybackOptions">
+        <item>AUTO_ECHO_CANCELLATION</item>
+        <item>AUTO_GAIN_CONTROL</item>
+        <item>BASS_BOOST</item>
+        <item>ENV_REVERB</item>
+        <item>EQUALIZER</item>
+        <item>LOUDNESS_ENHANCER</item>
+        <item>NOISE_SUPPRESSOR</item>
+        <item>PRESET_REVERB</item>
+        <item>VIRTUALIZER</item>
+    </string-array>
+
+    <string-array name="RecordingQualityVideoOptions">
+        <item>HIGH</item>
+        <item>480P</item>
+        <item>720P</item>
+        <item>1080P</item>
+        <item>2160P</item>
+        <item>CIF</item>
+        <item>LOW</item>
+        <item>QCIF</item>
+        <item>QVGA</item>
+        <item>TIME_LAPSE_CIF</item>
+        <item>TIME_LAPSE_LOW</item>
+        <item>TIME_LAPSE_HIGH</item>
+        <item>TIME_LAPSE_QCIF</item>
+        <item>TIME_LAPSE_QVGA</item>
+        <item>TIME_LAPSE_480P</item>
+        <item>TIME_LAPSE_720P</item>
+        <item>TIME_LAPSE_1080P</item>
+        <item>TIME_LAPSE_2160P</item>
+    </string-array>
+
+
 
 
 

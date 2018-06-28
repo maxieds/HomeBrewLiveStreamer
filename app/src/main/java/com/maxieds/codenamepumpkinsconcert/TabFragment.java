@@ -121,11 +121,8 @@ public class TabFragment extends Fragment {
         else if(tabNumber == TAB_LIVE_PANEL) {
 
             MainActivity.videoPreview = (SurfaceView) inflatedView.findViewById(R.id.camera_preview);
-            //MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.previewclock256);
             MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
-            //MainActivity.videoPreview.setBackgroundColor(MainActivity.runningActivity.getResources().getColor(R.color.colorPrimaryDark));
             MainActivity.videoPreview.setBackgroundDrawable(MainActivity.videoPreviewBGOverlay);
-            //MainActivity.videoPreview.getBackground().setAlpha(0);
 
             TextView tvLoggingMessages = new TextView(MainActivity.runningActivity); //(TextView) inflatedView.findViewById(R.id.textLogging);
             tvLoggingMessages.setTypeface(Typeface.MONOSPACE, Typeface.BOLD_ITALIC);
@@ -135,7 +132,6 @@ public class TabFragment extends Fragment {
             tvLoggingMessages.setMaxLines(12);
             tvLoggingMessages.setTextColor(getResources().getColor(R.color.colorAccent));
             tvLoggingMessages.setTextSize(10);
-            //tvLoggingMessages.setGravity(Gravity.BOTTOM);
             if(MainActivity.tvLoggingMessages != null)
                 tvLoggingMessages.setText(MainActivity.tvLoggingMessages.getText().toString());
             tvLoggingMessages.setCompoundDrawables(MainActivity.runningActivity.getResources().getDrawable(R.drawable.log32), null, null, null);
@@ -151,6 +147,9 @@ public class TabFragment extends Fragment {
             MainActivity.videoOptsScene = (Spinner) inflatedView.findViewById(R.id.videoOptsSceneSpinner);
             MainActivity.videoOptsWhiteBalance = (Spinner) inflatedView.findViewById(R.id.videoOptsWhiteBalanceSpinner);
             MainActivity.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
+            MainActivity.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
+            MainActivity.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
+            MainActivity.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
 
             AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
