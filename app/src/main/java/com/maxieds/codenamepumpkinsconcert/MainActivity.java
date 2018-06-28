@@ -10,6 +10,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
@@ -55,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
     public static CameraPreview videoCameraPreview;
     public static TextView tvLoggingMessages;
     public static String DEFAULT_RECORDING_QUALITY = "SDMEDIUM";
-    private static final int MAX_LOGGING_LINES = 12;
     public static SurfaceView videoPreview;
     public static Drawable videoPreviewBGOverlay;
     private static ServiceConnection recordServiceConn = new ServiceConnection() {
@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
     public static boolean setDoNotDisturb = true;
     public static boolean AVRECORD_SERVICE_RUNNING = false;
+    public static PowerManager.WakeLock bgWakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,17 +196,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(AVRecordingService.localService != null) {
-            AVRecordingService.localService.previewOff();
-        }
+        // do not disable anything when the phone is paused to keep the recording service running throughout:
+        //if(AVRecordingService.localService != null) {
+        //    AVRecordingService.localService.previewOff();
+        //}
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if(AVRecordingService.localService != null) {
-            AVRecordingService.localService.previewOn();
-        }
+        // do not disable anything when the phone is paused to keep the recording service running throughout:
+        //if(AVRecordingService.localService != null) {
+        //    AVRecordingService.localService.previewOn();
+        //}
     }
 
     @Override
@@ -218,11 +221,27 @@ public class MainActivity extends AppCompatActivity {
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
         }
+        releaseWakeLock();
         writeLoggingData("INFO", "Exiting application.");
     }
 
     private boolean hasPermission(String permission) {
         return getApplicationContext().checkPermission(permission, myPid(), myUid()) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void acquireWakeLock() {
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer");
+        bgWakeLock.acquire();
+    }
+
+    private void releaseWakeLock() {
+        if(bgWakeLock == null) {
+            Log.w(TAG, "BGWakeLock is NULL ... Cannot release it.");
+            return;
+        }
+        bgWakeLock.release(1);
+        bgWakeLock = null;
     }
 
     public void actionButtonCovertModeToLive(View button) {
@@ -233,46 +252,35 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setLogo(R.drawable.streaminglogo32);
     }
 
+    public static final String RECORD_VIDEO = "RECORD_VIDEO";
+    public static final String RECORD_AUDIO = "RECORD_AUDIO_ONLY";
+    public static final String PAUSE_RECORDING = "PAUSE_RECORDING";
+    public static final String STOP_RECORDING = "STOP_RECORDING";
+    public static final String PLAYBACK_RECORDING = "PLAYBACK_RECORDING";
+    public static final String STREAM_RECORDING = "STREAM_RECORDING";
+
     public void actionButtonHandleNavigation(View button) {
 
         String navAction = ((Button) button).getTag().toString();
-        if(navAction.equals("RECORD_VIDEO")) {
+        boolean restartStatsTimer = false;
+        if(navAction.equals(RECORD_VIDEO) || navAction.equals(RECORD_AUDIO)) {
             if(!AVRecordingService.isRecording()) {
-                AVRecordingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_VIDEO;
+                AVRecordingService.LOCAL_AVSETTING = navAction.equals(RECORD_VIDEO) ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
-                startRecordingService.setAction("RECORD_VIDEO");
+                startRecordingService.setAction(navAction);
                 startRecordingService.putExtra("RECORDOPTS", navAction);
                 //startForegroundService(startRecordingService);
+                acquireWakeLock();
                 startService(startRecordingService);
                 bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
+                restartStatsTimer = true;
             }
             else if(AVRecordingService.isPaused()) {
-                if(AVRecordingService.isRecordingAudioOnly()) {
+                if(AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_VIDEO)) {
                     AVRecordingService.localService.resumeRecording();
                     AVRecordingService.localService.recordVideoNow(videoOptsQuality.getSelectedItem().toString());
                 }
-                else {
-                    AVRecordingService.localService.resumeRecording();
-                }
-            }
-            else if(AVRecordingService.isRecordingAudioOnly()) {
-                AVRecordingService.localService.toggleAudioVideo(DEFAULT_RECORDING_QUALITY);
-            }
-            RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
-            RuntimeStats.updateStatsUI(true);
-        }
-        else if(navAction.equals("RECORD_AUDIO_ONLY")) {
-            if(!AVRecordingService.isRecording()) {
-                AVRecordingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_ONLY;
-                Intent startRecordingService = new Intent(this, AVRecordingService.class);
-                startRecordingService.setAction("RECORD_AUDIO_ONLY");
-                startService(startRecordingService);
-                //startForegroundService(startRecordingService);
-                bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
-                startRecordingService.putExtra("RECORDOPTS", navAction);
-            }
-            else if(AVRecordingService.isPaused()) {
-                if(!AVRecordingService.isRecordingAudioOnly()) {
+                else if(!AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_AUDIO)) {
                     AVRecordingService.localService.resumeRecording();
                     AVRecordingService.localService.recordAudioOnlyNow(videoOptsQuality.getSelectedItem().toString());
                 }
@@ -280,45 +288,58 @@ public class MainActivity extends AppCompatActivity {
                     AVRecordingService.localService.resumeRecording();
                 }
             }
-            else if(!AVRecordingService.isRecordingAudioOnly()) {
+            else if(AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_VIDEO) ||
+                    !AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_AUDIO)) {
                 AVRecordingService.localService.toggleAudioVideo(DEFAULT_RECORDING_QUALITY);
             }
             RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
-            RuntimeStats.updateStatsUI(true);
+            RuntimeStats.updateStatsUI(restartStatsTimer);
         }
-        else if(navAction.equals("PAUSE_RECORDING") && AVRecordingService.isRecording()) {
+        else if(navAction.equals(PAUSE_RECORDING) && AVRecordingService.isRecording()) {
             AVRecordingService.localService.pauseRecording();
         }
-        else if(navAction.equals("STOP_RECORDING") && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
-            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            stopService(stopRecordingService);
-            unbindService(recordServiceConn);
-            writeLoggingData("INFO", "Paused / stopped current recording session.");
+        else if(navAction.equals(STOP_RECORDING) && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
+            stopAVRecordingService();
         }
-        else if(navAction.equals("PLAYBACK_RECORDING")) {
+        else if(navAction.equals(PLAYBACK_RECORDING)) {
             writeLoggingData("INFO", "Navigation option \"PLAY LAST\" is currently unsupported.");
         }
-        else if(navAction.equals("STREAM_RECORDING")) {
+        else if(navAction.equals(STREAM_RECORDING)) {
             writeLoggingData("INFO", "Navigation option \"STREAM\" is currently unsupported.");
         }
-
         if(AVRecordingService.getErrorState()) {
-            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            stopService(stopRecordingService);
-            unbindService(recordServiceConn);
-            RuntimeStats.clear();
-            RuntimeStats.updateStatsUI(false);
+            stopAVRecordingService();
             Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
         }
-        Log.i(TAG, "FILE PATH: " + AVRecordingService.LAST_RECORDING_FILEPATH);
+    }
 
+    public void stopAVRecordingService() {
+        if(!AVRecordingService.isRecording() && !AVRECORD_SERVICE_RUNNING) {
+            Log.w(TAG, "AVRecordingService is NOT running ... Unable to stop it.");
+            return;
+        }
+        Intent stopRecordingService = new Intent(this, AVRecordingService.class);
+        releaseWakeLock();
+        stopService(stopRecordingService);
+        unbindService(recordServiceConn);
+        RuntimeStats.clear();
+        RuntimeStats.updateStatsUI(false);
+        writeLoggingData("INFO", "Paused / stopped current recording session.");
     }
 
     public static void writeLoggingData(String msgPrefix, String msg) {
-        String fullMessage = String.format(">> %s: %s\n", msgPrefix, msg);
-        //tvLoggingMessages.setText(tvLoggingMessages.getText() + fullMessage);
-        //tvLoggingMessages.scrollTo(Math.min(tvLoggingMessages.getLineCount(), MAX_LOGGING_LINES), 0);
-        Log.i(TAG, fullMessage.substring(2));
+        String fullMessage = String.format("%s\n", msg);
+        switch(msgPrefix) {
+            case "WARNING":
+                Log.w(TAG, fullMessage);
+                break;
+            case "ERROR":
+                Log.e(TAG, fullMessage);
+                break;
+            default:
+                Log.i(TAG, fullMessage);
+                break;
+        }
     }
 
     /**

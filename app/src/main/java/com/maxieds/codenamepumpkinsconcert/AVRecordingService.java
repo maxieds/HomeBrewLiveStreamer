@@ -49,7 +49,6 @@ public class AVRecordingService extends IntentService {
     public static String LAST_ERROR_MESSAGE = "";
     public static String LAST_RECORDING_FILEPATH = null;
     public static int dndInterruptionPolicy;
-    private PowerManager.WakeLock bgWakeLock;
 
     private Camera videoFeed = null;
     private MediaRecorder avFeed = null;
@@ -70,8 +69,8 @@ public class AVRecordingService extends IntentService {
     public void initNotifyChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // Oreo 8.1 breaks startForground significantly
             NotificationManager notifyManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            notifyManager.createNotificationChannel(new NotificationChannel(NCHANNELID_SERVICE, "HomeBrewLiveStreamer A/V Recording Service", NotificationManager.IMPORTANCE_DEFAULT));
-            notifyManager.createNotificationChannel(new NotificationChannel(NCHANNELID_TASK, "HomeBrewLiveStreamer Task Download Info", NotificationManager.IMPORTANCE_DEFAULT));
+            notifyManager.createNotificationChannel(new NotificationChannel(NCHANNELID_SERVICE, "HomeBrewLiveStreamer A/V Recording Service", NotificationManager.IMPORTANCE_HIGH));
+            notifyManager.createNotificationChannel(new NotificationChannel(NCHANNELID_TASK, "HomeBrewLiveStreamer Task Download Info", NotificationManager.IMPORTANCE_HIGH));
         }
     }
 
@@ -90,9 +89,9 @@ public class AVRecordingService extends IntentService {
             dndInterruptionPolicy = notifyManager.getCurrentInterruptionFilter();
             notifyManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
         }
-        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer");
-        bgWakeLock.acquire();
+        if(!MainActivity.bgWakeLock.isHeld()) {
+            MainActivity.bgWakeLock.acquire();
+        }
         // acquire camera + mic resources + external storage file path:
         try {
             videoFeed = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK); // open the back-facing camera
@@ -138,7 +137,7 @@ public class AVRecordingService extends IntentService {
             avFeed.setVideoSource(videoSrc);
             Log.i(TAG, "About to set specific AUD / AV settings ...");
             if(LOCAL_AVSETTING == AVSETTING_AUDIO_ONLY) {
-                avFeed.setInputSurface(MainActivity.videoPreview.getHolder().getSurface());
+                //avFeed.setInputSurface(MainActivity.videoPreview.getHolder().getSurface());
                 CamcorderProfile vprof;
                 if(DEFAULT_AVQUALSPEC_ID.length() >= 10 && !DEFAULT_AVQUALSPEC_ID.substring(0, 9).equals("TIME_LAPSE"))
                      vprof = AVQualitySpec.stringToCamcorderSpec("TIME_LAPSE_" + DEFAULT_AVQUALSPEC_ID);
@@ -277,7 +276,6 @@ public class AVRecordingService extends IntentService {
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notifyManager.setInterruptionFilter(dndInterruptionPolicy);
         }
-        bgWakeLock.release();
         RuntimeStats.clear();
         RuntimeStats.updateStatsUI(false);
         stopForeground(Service.STOP_FOREGROUND_REMOVE);
@@ -318,9 +316,12 @@ public class AVRecordingService extends IntentService {
     public void previewOn() {
         if(videoFeed != null && !videoFeedPreviewOn) {
             try {
+                videoFeed.lock();
                 videoFeed.reconnect();
                 videoFeed.setPreviewDisplay(MainActivity.videoPreview.getHolder());
                 videoFeed.startPreview();
+                if(isPaused())
+                    resumeRecording();
                 videoFeedPreviewOn = true;
             } catch(IOException ioe) {
                 Log.e(TAG, "Error in camera preview: " + ioe.getMessage());
@@ -337,6 +338,9 @@ public class AVRecordingService extends IntentService {
         avFeedPreviewOn = false;
         if(videoFeed != null && videoFeedPreviewOn) {
             videoFeed.stopPreview();
+            pauseRecording();
+            // unlock camera here?
+            videoFeed.unlock();
             videoFeedPreviewOn = false;
         }
     }
@@ -348,11 +352,11 @@ public class AVRecordingService extends IntentService {
         Log.i(TAG, intent.getAction());
         String intentAction = intent.getAction();
         Log.i(TAG, "onHandleIntent: action = " + intentAction);
-        if(intentAction != null && intentAction.equals("RECORD_VIDEO")) {
+        if(intentAction != null && intentAction.equals(MainActivity.RECORD_VIDEO)) {
             startForeground(AVSERVICE_PROCID, getForegroundServiceNotify());
             recordVideoNow(DEFAULT_AVQUALSPEC_ID);
         }
-        else if(intentAction != null && intentAction.equals("RECORD_AUDIO_ONLY")) {
+        else if(intentAction != null && intentAction.equals(MainActivity.RECORD_AUDIO)) {
             startForeground(AVSERVICE_PROCID, getForegroundServiceNotify());
             recordAudioOnlyNow(DEFAULT_AVQUALSPEC_ID);
         }
@@ -366,7 +370,7 @@ public class AVRecordingService extends IntentService {
         fgNotify.setOngoing(true);
         fgNotify.setContentTitle("Home Brew Live Streamer")
                 .setContentText("We are currently recording / streaming audio video media now.")
-                .setSmallIcon(R.drawable.streaminglogo32)
+                .setSmallIcon(R.drawable.splogo)
                 .setWhen(System.currentTimeMillis())
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .setContentIntent(pendingIntent);
@@ -451,7 +455,6 @@ public class AVRecordingService extends IntentService {
     }
 
     public boolean recordAudioOnlyNow(String recordingQuality) {
-        Log.i(TAG, "Inside of RecordAudioOnlyNow()");
         LOCAL_AVSETTING = AVSETTING_AUDIO_ONLY;
         inErrorState = false;
         setupMediaRecorder(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.VideoSource.SURFACE, MediaRecorder.OutputFormat.AAC_ADTS, recordingQuality);
@@ -463,7 +466,6 @@ public class AVRecordingService extends IntentService {
     }
 
     public boolean recordVideoNow(String recordingQuality) {
-        Log.i(TAG, "Inside of RecordVideoNow()");
         LOCAL_AVSETTING = AVSETTING_AUDIO_VIDEO;
         inErrorState = false;
         setupMediaRecorder(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.VideoSource.CAMERA, MediaRecorder.OutputFormat.MPEG_4, recordingQuality);
