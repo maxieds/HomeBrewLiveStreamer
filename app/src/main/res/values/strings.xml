@@ -176,12 +176,12 @@
     </string-array>
 
     <string-array name="RecordingQualityVideoOptions">
-        <item>HIGH</item>
         <item>480P</item>
         <item>720P</item>
         <item>1080P</item>
         <item>2160P</item>
         <item>CIF</item>
+        <item>HIGH</item>
         <item>LOW</item>
         <item>QCIF</item>
         <item>QVGA</item>

@@ -8,36 +8,22 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.AudioFormat;
 import android.media.CamcorderProfile;
-import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
-import android.media.MediaFormat;
-import android.media.MediaMuxer;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
-import android.text.format.Time;
 import android.util.Log;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.TextureView;
-import android.widget.FrameLayout;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.util.List;
 
 public class AVRecordingService extends IntentService {
 
@@ -60,7 +46,7 @@ public class AVRecordingService extends IntentService {
     private static boolean avFeedPreviewOn = false;
     private static boolean inErrorState = false;
     private static boolean isPaused = false;
-    public static String LAST_ERROR_MESSAGE = "NO ERROR";
+    public static String LAST_ERROR_MESSAGE = "";
     public static String LAST_RECORDING_FILEPATH = null;
     public static int dndInterruptionPolicy;
     private PowerManager.WakeLock bgWakeLock;
@@ -105,7 +91,7 @@ public class AVRecordingService extends IntentService {
             notifyManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
         }
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer (Pumpkins Concert ON!)");
+        bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer");
         bgWakeLock.acquire();
         // acquire camera + mic resources + external storage file path:
         try {
@@ -158,7 +144,6 @@ public class AVRecordingService extends IntentService {
                      vprof = AVQualitySpec.stringToCamcorderSpec("TIME_LAPSE_" + DEFAULT_AVQUALSPEC_ID);
                 else
                      vprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC_ID);
-                //vprof.fileFormat = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, aprof.audioSampleRate, aprof.audioChannels).getInteger(MediaFormat.MIMETYPE_AUDIO_AAC);
                 vprof.fileFormat = outputFormat;
                 Log.i(TAG, "AUD Recorder Profile: " + vprof.toString());
                 avFeed.setProfile(vprof);
@@ -169,22 +154,7 @@ public class AVRecordingService extends IntentService {
                 cprof.fileFormat = outputFormat;
                 Log.i(TAG, "AV Recorder Profile: " + cprof.toString());
                 avFeed.setProfile(cprof);
-                //avFeed.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-                //avFeed.setCaptureRate(cprof.videoFrameRate * 60);
-                //MediaFormat mformat = new MediaFormat();
-                //mformat.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
-                //mformat.setString(MediaFormat.KEY_MIME, MediaFormat.MIMETYPE_VIDEO_AVC);
-                //mformat.setString(MediaFormat.KEY_TRACK_ID, "Codename: Smashing Pumpkins!");
-                //mformat.setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel1);
-                //avFeed.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                //avFeed.setAudioChannels(cprof.audioChannels);
-                //avFeed.setAudioSamplingRate(cprof.audioSampleRate);
-                //avFeed.setAudioEncodingBitRate(cprof.audioBitRate);
-                //avFeed.setVideoSize(cprof.videoFrameWidth, cprof.videoFrameHeight);
-                //avFeed.setVideoEncodingBitRate(cprof.videoBitRate);
-                //avFeed.setVideoEncoder(MediaRecorder.VideoEncoder.VP8);
                 avFeed.setVideoEncodingProfileLevel(MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline, MediaCodecInfo.CodecProfileLevel.AVCLevel1);
-                //avFeed.setVideoFrameRate(cprof.videoFrameRate);
                 avFeed.setOrientationHint(Integer.valueOf(MainActivity.videoOptsRotation.getSelectedItem().toString()));
             }
             loggingFile = generateNewOutputFilePath();
@@ -332,7 +302,7 @@ public class AVRecordingService extends IntentService {
         avFeed.release();
         //avFeed.reset();
         if(loggingFile != null) {
-            Log.d(TAG, "loggingFile Total Space: " + loggingFile.getTotalSpace());
+            Log.d(TAG, "loggingFile Total Space: " + loggingFile.getTotalSpace() / 1024 + " MB");
         }
         videoFeed.lock();
     }

@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
         if(AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING) {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
             stopService(stopRecordingService);
-            //unbindService(recordServiceConn);
+            unbindService(recordServiceConn);
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
         }
@@ -244,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
                 startRecordingService.putExtra("RECORDOPTS", navAction);
                 //startForegroundService(startRecordingService);
                 startService(startRecordingService);
-                //bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
+                bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
             }
             else if(AVRecordingService.isPaused()) {
                 if(AVRecordingService.isRecordingAudioOnly()) {
@@ -268,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
                 startRecordingService.setAction("RECORD_AUDIO_ONLY");
                 startService(startRecordingService);
                 //startForegroundService(startRecordingService);
-                //bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
+                bindService(startRecordingService, recordServiceConn, Context.BIND_AUTO_CREATE);
                 startRecordingService.putExtra("RECORDOPTS", navAction);
             }
             else if(AVRecordingService.isPaused()) {
@@ -292,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
         else if(navAction.equals("STOP_RECORDING") && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
             stopService(stopRecordingService);
-            //unbindService(recordServiceConn);
+            unbindService(recordServiceConn);
             writeLoggingData("INFO", "Paused / stopped current recording session.");
         }
         else if(navAction.equals("PLAYBACK_RECORDING")) {
@@ -305,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
         if(AVRecordingService.getErrorState()) {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
             stopService(stopRecordingService);
-            //unbindService(recordServiceConn);
+            unbindService(recordServiceConn);
             RuntimeStats.clear();
             RuntimeStats.updateStatsUI(false);
             Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
