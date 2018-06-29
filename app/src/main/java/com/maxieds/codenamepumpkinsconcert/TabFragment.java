@@ -1,6 +1,7 @@
 package com.maxieds.codenamepumpkinsconcert;
 
 import android.content.res.ColorStateList;
+import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
@@ -120,9 +122,10 @@ public class TabFragment extends Fragment {
         if(tabNumber == TAB_COVERT_MODE) {}
         else if(tabNumber == TAB_LIVE_PANEL) {
 
-            AVRecordingService.videoPreview = (SurfaceView) inflatedView.findViewById(R.id.camera_preview);
+            AVRecordingService.videoPreviewView = (TextureView) inflatedView.findViewById(R.id.camera_preview);
+            AVRecordingService.videoPreviewView.setSurfaceTexture(AVRecordingService.videoPreview);
             AVRecordingService.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
-            AVRecordingService.videoPreview.setBackgroundDrawable(AVRecordingService.videoPreviewBGOverlay);
+            //AVRecordingService.videoPreviewView.setBackgroundDrawable(AVRecordingService.videoPreviewBGOverlay);
 
             TextView tvLoggingMessages = new TextView(MainActivity.runningActivity); //(TextView) inflatedView.findViewById(R.id.textLogging);
             tvLoggingMessages.setTypeface(Typeface.MONOSPACE, Typeface.BOLD_ITALIC);

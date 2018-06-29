@@ -33,10 +33,10 @@ public class RuntimeStats {
          recordingStartTime = null;
          loggingFilePath = null;
          startBatteryCapacity = 0L;
-         updateStatsUI(false, true);
-         updateStatsUI(false, false);
          statsUpdateHandler.removeCallbacks(statsUpdateRunnableForeground);
          statsUpdateHandler.removeCallbacks(statsUpdateRunnableBackground);
+         updateStatsUI(false, true);
+         updateStatsUI(false, false);
      }
 
      public static String getRecordingMode() {

@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.location.Criteria;
@@ -26,6 +27,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.widget.Spinner;
 
 import java.io.File;
@@ -62,7 +64,8 @@ public class AVRecordingService extends IntentService {
     private Camera videoFeed = null;
     private MediaRecorder avFeed = null;
 
-    public static SurfaceView videoPreview;
+    public static SurfaceTexture videoPreview = new SurfaceTexture(0);
+    public static TextureView videoPreviewView;
     public static Surface persistentVideoSurface;
     public static SurfaceHolder videoPreviewHolder;
     public static Drawable videoPreviewBGOverlay;
@@ -103,10 +106,6 @@ public class AVRecordingService extends IntentService {
         if(videoOptsQuality != null) {
             DEFAULT_AVQUALSPEC_ID = videoOptsQuality.getSelectedItem().toString();
         }
-        try {
-            videoPreviewHolder = videoPreview.getHolder();
-            videoPreviewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        } catch(NullPointerException npe) {}
         if(MainActivity.setDoNotDisturb) {
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             dndInterruptionPolicy = notifyManager.getCurrentInterruptionFilter();
@@ -115,14 +114,27 @@ public class AVRecordingService extends IntentService {
         if(bgWakeLock != null && !bgWakeLock.isHeld()) {
             bgWakeLock.acquire();
         }
-        recordingSliceFormat = getRecordingSliceFormatString();
-        currentRecordingSlice = 0;
+        //try {
+        //    videoPreviewHolder = videoPreview.getHolder();
+        //    videoPreviewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        //} catch(NullPointerException npe) {}
+        initAVParams(true);
+    }
+
+    public void initAVParams(boolean resetFileHandlers) {
+        if(resetFileHandlers) {
+            recordingSliceFormat = getRecordingSliceFormatString();
+            currentRecordingSlice = 0;
+            loggingFile = generateNewOutputFilePath();
+            LAST_RECORDING_FILEPATH = loggingFile.getAbsolutePath();
+        }
         // acquire camera + mic resources + external storage file path:
         try {
             videoFeed = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK); // open the back-facing camera
             updateVideoFeedParams();
             if(USE_VIDEO_PREVIEW) {
-                videoFeed.setPreviewDisplay(videoPreviewHolder);
+                //videoFeed.setPreviewDisplay(videoPreviewHolder);
+                videoFeed.setPreviewTexture(videoPreview);
                 videoFeed.startPreview();
                 videoFeedPreviewOn = true;
             }
@@ -133,7 +145,6 @@ public class AVRecordingService extends IntentService {
             Utils.printDebuggingInfo(ce);
             Log.e(TAG, "Opening camera device and/or MediaRecorder : " + ce.getMessage());
         }
-
     }
 
     public void updateVideoFeedParams() {
@@ -167,11 +178,6 @@ public class AVRecordingService extends IntentService {
             avFeed = new MediaRecorder();
             videoFeed.unlock();
             if(LOCAL_AVSETTING == AVSETTING_AUDIO_ONLY) {
-                //try {
-                //    persistentVideoSurface = MediaCodec.createPersistentInputSurface();
-                //    avFeed.setInputSurface(persistentVideoSurface);
-                //} catch(NullPointerException npe) {}
-                //avFeed.setVideoSource(videoSrc);
                 avFeed.setAudioSource(audioSrc);
                 CamcorderProfile aprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC_ID);
                 avFeed.setOutputFormat(outputFormat);
@@ -198,8 +204,6 @@ public class AVRecordingService extends IntentService {
                     avFeed.setOrientationHint(Integer.valueOf(videoOptsRotation.getSelectedItem().toString()));
                 } catch(NullPointerException npe) {}
             }
-            loggingFile = generateNewOutputFilePath();
-            LAST_RECORDING_FILEPATH = loggingFile.getAbsolutePath();
             avFeed.setOutputFile(loggingFile);
             avFeed.setMaxFileSize(RECORDING_SLICE_MAXBYTES);
             setLocationAttributes();
@@ -363,13 +367,17 @@ public class AVRecordingService extends IntentService {
         if(videoFeed == null)
             return;
         Log.i(TAG, "Releasing Camera");
+        videoFeed.lock();
         videoFeed.stopPreview();
         videoFeed.release();
     }
 
     public void videoPreviewOn() {
         try {
-            videoFeed.reconnect();
+            //videoFeed.lock();
+            //videoFeed.reconnect();
+            //videoFeed.setPreviewDisplay(videoPreviewHolder);
+            videoFeed.setPreviewTexture(videoPreview);
             videoFeed.startPreview();
         } catch(IOException ioe) {
             Log.e(TAG, "Reconnecting video preview : " + ioe.getMessage());
@@ -378,6 +386,7 @@ public class AVRecordingService extends IntentService {
 
     public void videoPreviewOff() {
         videoFeed.stopPreview();
+        //videoFeed.release();
     }
 
     private static final int AVSERVICE_PROCID = 97736153;
@@ -409,6 +418,7 @@ public class AVRecordingService extends IntentService {
         fgNotify.setOngoing(true);
         fgNotify.setContentTitle("Home Brew Live Streamer")
                 .setColor(0xAEEEEE)
+                .setTicker(bannerMsg)
                 .setContentText(bannerMsg)
                 .setOngoing(true)
                 .setSmallIcon(R.drawable.drumset64)

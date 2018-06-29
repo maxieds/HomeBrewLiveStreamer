@@ -203,9 +203,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // do not disable anything when the phone is paused to keep the recording service running throughout:
         if(AVRecordingService.localService != null) {
             AVRecordingService.localService.videoPreviewOff();
+            //if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // shutdown the camera:
+            //    AVRecordingService.localService.releaseMediaRecorder();
+            //    AVRecordingService.localService.releaseCamera();
+            //}
+            //else { // keep MediaRecorder running to record audio in the meantime:
+            //    AVRecordingService.localService.releaseCamera();
+            //}
         }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.statsUpdateHandler.removeCallbacks(RuntimeStats.statsUpdateRunnableForeground);
@@ -215,9 +221,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // do not disable anything else but the screen when the phone is paused to keep the recording service running throughout:
         if(AVRecordingService.localService != null) { // reconnect the surface to the camera:
             AVRecordingService.localService.videoPreviewOn();
+            //if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // restore the camera:
+            //    AVRecordingService.localService.initAVParams(false);
+            //    AVRecordingService.localService.recordVideoNow(AVRecordingService.DEFAULT_AVQUALSPEC_ID);
+            //}
+            //else { // keep MediaRecorder still running to record audio in the meantime (this resets the display surface on screen):
+            //    AVRecordingService.localService.initAVParams(false);
+            //}
         }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.updateStatsUI(true, true);
@@ -348,12 +360,14 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            releaseWakeLock();
             stopService(stopRecordingService);
             unbindService(recordServiceConn);
-            RuntimeStats.clear();
+            releaseWakeLock();
             //restoreDisplayScreen();
-        } catch(Exception ise) {}
+        } catch(Exception ise) {
+            Log.e(TAG, ise.getMessage());
+        }
+        RuntimeStats.clear();
         writeLoggingData("INFO", "Paused / stopped current recording session.");
     }
 
