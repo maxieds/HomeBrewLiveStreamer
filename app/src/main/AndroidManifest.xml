@@ -13,11 +13,9 @@
     <!--<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>-->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.BATTERY_STATS"/>
 
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
-    <uses-feature android:name="android.location" android:required="true" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
     <application
         android:allowBackup="true"
@@ -27,6 +25,7 @@
         android:supportsRtl="true"
         android:largeHeap="true"
         android:usesCleartextTraffic="false"
+        android:hardwareAccelerated="true"
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
@@ -40,6 +39,7 @@
         </activity>
         <service android:name="AVRecordingService"
             android:exported="false"
+            android:hardwareAccelerated="true"
             android:label="Home Brew Audio / Video Recording Service" />
             <!--android:description="Controls the background AV recording tasks in the Home Brew Simple Live Streamer app."-->
     </application>

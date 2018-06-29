@@ -157,8 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.ACCESS_NOTIFICATION_POLICY",
                 "android.permission.BLUETOOTH",
                 "android.permission.WAKE_LOCK",
-                "android.permission.VIBRATE",
-                "android.permission.ACCESS_COARSE_LOCATION"
+                "android.permission.VIBRATE"
         };
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
@@ -204,14 +203,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if(AVRecordingService.localService != null) {
-            AVRecordingService.localService.videoPreviewOff();
-            //if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // shutdown the camera:
-            //    AVRecordingService.localService.releaseMediaRecorder();
-            //    AVRecordingService.localService.releaseCamera();
-            //}
-            //else { // keep MediaRecorder running to record audio in the meantime:
-            //    AVRecordingService.localService.releaseCamera();
-            //}
+            if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // shutdown the camera:
+                AVRecordingService.localService.releaseMediaRecorder();
+                AVRecordingService.localService.releaseCamera();
+            }
+            else { // keep MediaRecorder running to record audio in the meantime:
+                AVRecordingService.localService.releaseCamera();
+                //AVRecordingService.localService.videoPreviewOff();
+            }
         }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.statsUpdateHandler.removeCallbacks(RuntimeStats.statsUpdateRunnableForeground);
@@ -222,14 +221,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if(AVRecordingService.localService != null) { // reconnect the surface to the camera:
-            AVRecordingService.localService.videoPreviewOn();
-            //if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // restore the camera:
-            //    AVRecordingService.localService.initAVParams(false);
-            //    AVRecordingService.localService.recordVideoNow(AVRecordingService.DEFAULT_AVQUALSPEC_ID);
-            //}
-            //else { // keep MediaRecorder still running to record audio in the meantime (this resets the display surface on screen):
-            //    AVRecordingService.localService.initAVParams(false);
-            //}
+            if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // restore the camera:
+                AVRecordingService.localService.initAVParams(true);
+                AVRecordingService.localService.recordVideoNow(AVRecordingService.DEFAULT_AVQUALSPEC_ID);
+            }
+            else { // keep MediaRecorder still running to record audio in the meantime (this resets the display surface on screen):
+                AVRecordingService.localService.initAVParams(false);
+                //AVRecordingService.localService.videoPreviewOn();
+            }
         }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.updateStatsUI(true, true);
@@ -360,8 +359,11 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            stopService(stopRecordingService);
+            Log.i(TAG, "Unbinding from service.");
             unbindService(recordServiceConn);
+            Log.i(TAG, "Stopping service.");
+            stopService(stopRecordingService);
+            Log.i(TAG, "Releasing wake lock");
             releaseWakeLock();
             //restoreDisplayScreen();
         } catch(Exception ise) {

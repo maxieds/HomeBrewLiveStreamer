@@ -33,7 +33,7 @@ import android.widget.Spinner;
 import java.io.File;
 import java.io.IOException;
 
-public class AVRecordingService extends IntentService {
+public class AVRecordingService extends IntentService implements TextureView.SurfaceTextureListener {
 
     private static final String TAG = AVRecordingService.class.getSimpleName();
 
@@ -135,6 +135,8 @@ public class AVRecordingService extends IntentService {
             if(USE_VIDEO_PREVIEW) {
                 //videoFeed.setPreviewDisplay(videoPreviewHolder);
                 videoFeed.setPreviewTexture(videoPreview);
+                videoPreviewView.setSurfaceTextureListener(this);
+                videoPreviewView.setSurfaceTexture(videoPreview);
                 videoFeed.startPreview();
                 videoFeedPreviewOn = true;
             }
@@ -187,12 +189,12 @@ public class AVRecordingService extends IntentService {
                 avFeed.setAudioEncoder(aprof.audioCodec);
             }
             else {
-                try {
-                    if(USE_VIDEO_PREVIEW) {
-                        avFeed.setPreviewDisplay(videoPreviewHolder.getSurface());
-                        avFeedPreviewOn = true;
-                    }
-                } catch(NullPointerException npe) {}
+                //try {
+                //    if(USE_VIDEO_PREVIEW) {
+                //        avFeed.setPreviewDisplay(videoPreview);
+                //        avFeedPreviewOn = true;
+                //    }
+                //} catch(NullPointerException npe) {}
                 avFeed.setCamera(videoFeed);
                 avFeed.setAudioSource(audioSrc);
                 avFeed.setVideoSource(videoSrc);
@@ -206,7 +208,6 @@ public class AVRecordingService extends IntentService {
             }
             avFeed.setOutputFile(loggingFile);
             avFeed.setMaxFileSize(RECORDING_SLICE_MAXBYTES);
-            setLocationAttributes();
             setupAVFeedErrorHandling();
             avFeed.prepare();
             avFeed.start();
@@ -305,20 +306,6 @@ public class AVRecordingService extends IntentService {
         });
     }
 
-    public void setLocationAttributes() {
-        LocationManager locationMan = (LocationManager) getSystemService(LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        String bestProvider = locationMan.getBestProvider(criteria, false);
-        try {
-            Location gpsLocation = locationMan.getLastKnownLocation(bestProvider);
-            avFeed.setLocation((float) gpsLocation.getLatitude(), (float) gpsLocation.getLongitude());
-        } catch (NullPointerException npe) {
-            LAST_ERROR_MESSAGE = "INFO : NO GPS LOC AVAILABLE";
-        } catch(SecurityException se) {
-            LAST_ERROR_MESSAGE = "INFO : NO GPS LOC AVAILABLE";
-        }
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -373,15 +360,7 @@ public class AVRecordingService extends IntentService {
     }
 
     public void videoPreviewOn() {
-        try {
-            //videoFeed.lock();
-            //videoFeed.reconnect();
-            //videoFeed.setPreviewDisplay(videoPreviewHolder);
-            videoFeed.setPreviewTexture(videoPreview);
-            videoFeed.startPreview();
-        } catch(IOException ioe) {
-            Log.e(TAG, "Reconnecting video preview : " + ioe.getMessage());
-        }
+        videoFeed.startPreview();
     }
 
     public void videoPreviewOff() {
@@ -555,5 +534,24 @@ public class AVRecordingService extends IntentService {
         Log.i(TAG, "Now recording A/V data to \"" + loggingFilePath + "\" ...");
         return true;
     }
+
+    @Override
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        videoPreview = surface;
+        videoPreviewView.setSurfaceTexture(surface);
+        videoFeed.startPreview();
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        videoFeed.stopPreview();
+        return true;
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {}
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
 
 }
