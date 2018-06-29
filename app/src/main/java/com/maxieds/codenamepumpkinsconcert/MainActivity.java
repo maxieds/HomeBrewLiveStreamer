@@ -6,37 +6,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
-import android.text.Layout;
-import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.SurfaceView;
-import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Spinner;
-import android.widget.TabHost;
 import android.widget.TextView;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.hardware.Camera;
-
-import com.singhajit.sherlock.core.Sherlock;
 
 import static android.os.Process.killProcess;
 import static android.os.Process.myPid;
@@ -48,6 +30,11 @@ import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_SETTINGS;
 import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_TOOLS;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static final int MEDIA_STATE_IDLE = 0;
+    public static final int MEDIA_STATE_PLAYBACK_MODE = 1;
+    public static final int MEDIA_STATE_RECORDING_MODE = 2;
+    public static int mediaState = MEDIA_STATE_IDLE;
 
     private static final String TAG = MainActivity.class.getSimpleName();
     public static MainActivity runningActivity;
@@ -77,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        Sherlock.init(this); // for non-production sanity with debugging A/V under Android ...
         if(!isTaskRoot()) {}
         setContentView(R.layout.activity_main);
         runningActivity = this;
@@ -202,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(AVRecordingService.localService != null) {
+        if(mediaState == MEDIA_STATE_RECORDING_MODE && AVRecordingService.localService != null) {
             if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // shutdown the camera:
                 AVRecordingService.localService.releaseMediaRecorder();
                 AVRecordingService.localService.releaseCamera();
@@ -212,6 +198,9 @@ public class MainActivity extends AppCompatActivity {
                 //AVRecordingService.localService.videoPreviewOff();
             }
         }
+        else if(mediaState == MEDIA_STATE_PLAYBACK_MODE) {
+            stopAVRecordingService();
+        }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.statsUpdateHandler.removeCallbacks(RuntimeStats.statsUpdateRunnableForeground);
         }
@@ -220,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(AVRecordingService.localService != null) { // reconnect the surface to the camera:
+        if(mediaState == MEDIA_STATE_RECORDING_MODE && AVRecordingService.localService != null) { // reconnect the surface to the camera:
             if(AVRecordingService.LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_VIDEO) { // restore the camera:
                 AVRecordingService.localService.initAVParams(true);
                 AVRecordingService.localService.recordVideoNow(AVRecordingService.DEFAULT_AVQUALSPEC_ID);
@@ -266,23 +255,6 @@ public class MainActivity extends AppCompatActivity {
         AVRecordingService.bgWakeLock = null;
     }
 
-    private void turnOffDisplayScreen() {
-        WindowManager.LayoutParams lparams = new WindowManager.LayoutParams();
-        lparams.flags |= WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON;
-        lparams.screenBrightness = 1;
-        getWindow().setAttributes(lparams);
-        //setShowWhenLocked(true);
-        //setTurnScreenOn(false);
-    }
-
-    private void restoreDisplayScreen() {
-        WindowManager.LayoutParams lparams = getWindow().getAttributes();
-        lparams.screenBrightness = -1;
-        getWindow().setAttributes(lparams);
-        setShowWhenLocked(false);
-        setTurnScreenOn(true);
-    }
-
     public void actionButtonCovertModeToLive(View button) {
         getSupportActionBar().setTitle(getString(R.string.app_name));
         viewPager.setCurrentItem(TAB_LIVE_PANEL);
@@ -302,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
 
         String navAction = ((Button) button).getTag().toString();
         boolean restartStatsTimer = false;
-        if(navAction.equals(RECORD_VIDEO) || navAction.equals(RECORD_AUDIO)) {
+        if((navAction.equals(RECORD_VIDEO) || navAction.equals(RECORD_AUDIO)) && mediaState == MEDIA_STATE_IDLE) {
             if(!AVRecordingService.isRecording()) {
                 AVRecordingService.LOCAL_AVSETTING = navAction.equals(RECORD_VIDEO) ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
@@ -332,16 +304,22 @@ public class MainActivity extends AppCompatActivity {
             }
             RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
             RuntimeStats.updateStatsUI(restartStatsTimer, true);
-            //turnOffDisplayScreen();
+            mediaState = MEDIA_STATE_RECORDING_MODE;
         }
-        else if(navAction.equals(PAUSE_RECORDING) && AVRecordingService.isRecording()) {
+        else if(navAction.equals(PAUSE_RECORDING) && (AVRecordingService.isRecording() || mediaState == MEDIA_STATE_PLAYBACK_MODE)) {
             AVRecordingService.localService.pauseRecording();
         }
         else if(navAction.equals(STOP_RECORDING) && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
             stopAVRecordingService();
         }
-        else if(navAction.equals(PLAYBACK_RECORDING)) {
-            writeLoggingData("INFO", "Navigation option \"PLAY LAST\" is currently unsupported.");
+        else if(navAction.equals(PLAYBACK_RECORDING) && mediaState == MEDIA_STATE_IDLE) {
+            AVRecordingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_PLAYBACK;
+            Intent startPlaybackService = new Intent(this, AVRecordingService.class);
+            startPlaybackService.setAction(navAction);
+            startService(startPlaybackService);
+            bindService(startPlaybackService, recordServiceConn, Context.BIND_AUTO_CREATE);
+            RuntimeStats.updateStatsUI(true, true);
+            mediaState = MEDIA_STATE_PLAYBACK_MODE;
         }
         else if(navAction.equals(STREAM_RECORDING)) {
             writeLoggingData("INFO", "Navigation option \"STREAM\" is currently unsupported.");
@@ -359,18 +337,15 @@ public class MainActivity extends AppCompatActivity {
         }
         try {
             Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            Log.i(TAG, "Unbinding from service.");
             unbindService(recordServiceConn);
-            Log.i(TAG, "Stopping service.");
             stopService(stopRecordingService);
-            Log.i(TAG, "Releasing wake lock");
             releaseWakeLock();
-            //restoreDisplayScreen();
         } catch(Exception ise) {
             Log.e(TAG, ise.getMessage());
         }
         RuntimeStats.clear();
-        writeLoggingData("INFO", "Paused / stopped current recording session.");
+        mediaState = MEDIA_STATE_IDLE;
+        writeLoggingData("INFO", "Paused / stopped current recording and/or playback session.");
     }
 
     public static void writeLoggingData(String msgPrefix, String msg) {

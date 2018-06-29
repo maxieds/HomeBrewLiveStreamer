@@ -11,11 +11,7 @@ import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationManager;
 import android.media.CamcorderProfile;
-import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -26,12 +22,15 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.Spinner;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AVRecordingService extends IntentService implements TextureView.SurfaceTextureListener {
 
@@ -39,6 +38,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
 
     public static final int AVSETTING_AUDIO_ONLY = 0;
     public static final int AVSETTING_AUDIO_VIDEO = 1;
+    public static final int AVSETTING_PLAYBACK = 2;
     public static int LOCAL_AVSETTING = AVSETTING_AUDIO_ONLY;
     public static final boolean USE_VIDEO_PREVIEW = true;
 
@@ -46,6 +46,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     public static String AVOUTPUT_FILE_PREFIX = "pumpkins-atlanta";
     public static String DEFAULT_AVQUALSPEC_ID = MainActivity.DEFAULT_RECORDING_QUALITY;
     public static final long RECORDING_SLICE_MAXBYTES = 1073741824L; // 1GB = 1024MB
+    public static List<File> RECORDING_HISTORY = new ArrayList<File>();
 
     public static AVRecordingService localService = null;
     private static boolean isRecording = false;
@@ -63,11 +64,18 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
 
     private Camera videoFeed = null;
     private MediaRecorder avFeed = null;
+    private MediaPlayer mPlayer = null;
+    private int mediaPlayerPosition = 0;
+    private int historyPlaybackIndex;
+    private FileInputStream currentHistoryTrack;
 
-    public static SurfaceTexture videoPreview = new SurfaceTexture(0);
+    public static SurfaceTexture videoPreview;
+    static {
+        videoPreview = new SurfaceTexture(0);
+        videoPreview.detachFromGLContext();
+    }
     public static TextureView videoPreviewView;
     public static Surface persistentVideoSurface;
-    public static SurfaceHolder videoPreviewHolder;
     public static Drawable videoPreviewBGOverlay;
     public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
     public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
@@ -114,10 +122,6 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         if(bgWakeLock != null && !bgWakeLock.isHeld()) {
             bgWakeLock.acquire();
         }
-        //try {
-        //    videoPreviewHolder = videoPreview.getHolder();
-        //    videoPreviewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        //} catch(NullPointerException npe) {}
         initAVParams(true);
     }
 
@@ -133,10 +137,8 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
             videoFeed = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK); // open the back-facing camera
             updateVideoFeedParams();
             if(USE_VIDEO_PREVIEW) {
-                //videoFeed.setPreviewDisplay(videoPreviewHolder);
                 videoFeed.setPreviewTexture(videoPreview);
                 videoPreviewView.setSurfaceTextureListener(this);
-                videoPreviewView.setSurfaceTexture(videoPreview);
                 videoFeed.startPreview();
                 videoFeedPreviewOn = true;
             }
@@ -189,12 +191,6 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
                 avFeed.setAudioEncoder(aprof.audioCodec);
             }
             else {
-                //try {
-                //    if(USE_VIDEO_PREVIEW) {
-                //        avFeed.setPreviewDisplay(videoPreview);
-                //        avFeedPreviewOn = true;
-                //    }
-                //} catch(NullPointerException npe) {}
                 avFeed.setCamera(videoFeed);
                 avFeed.setAudioSource(audioSrc);
                 avFeed.setVideoSource(videoSrc);
@@ -218,6 +214,43 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
             inErrorState = true;
             Utils.printDebuggingInfo(ce);
             Log.e(TAG, "Setting parameters on the MediaRecorder : " + ce.getMessage());
+        }
+    }
+
+    public void setupMediaPlayer() {
+        if (RECORDING_HISTORY.size() == 0) {
+            inErrorState = true;
+            Log.w(TAG, "Attempt to playback a non-existent recording history.");
+            return;
+        }
+        try {
+            historyPlaybackIndex = 0;
+            currentHistoryTrack = new FileInputStream(RECORDING_HISTORY.get(historyPlaybackIndex));
+            mPlayer.setDataSource(currentHistoryTrack.getFD());
+            mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mPlayer.start();
+                }
+            });
+            mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    try {
+                        // TODO: View all playbacks recorded this session ...
+                        //currentHistoryTrack.close();
+                        //mPlayer.stop();
+                        //AVRecordingService.localService.stopSelf();
+                        mPlayer.start();
+                    } catch(Exception e) {
+                        inErrorState = true;
+                        Log.e(TAG, e.getMessage());
+                    }
+                }
+            });
+        } catch(Exception e) {
+            inErrorState = true;
+            Log.e(TAG, e.getMessage());
         }
     }
 
@@ -312,8 +345,10 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         if(LOCAL_AVSETTING == AVSETTING_AUDIO_ONLY && persistentVideoSurface != null) {
             persistentVideoSurface.release();
         }
+        videoPreviewView.setSurfaceTextureListener(null);
         releaseMediaRecorder();
         releaseCamera();
+        releaseMediaPlayer();
         if(videoPreviewBGOverlay != null) {
             videoPreviewBGOverlay.setAlpha(255);
         }
@@ -325,6 +360,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         RuntimeStats.updateStatsUI(false, true);
         stopForeground(Service.STOP_FOREGROUND_REMOVE);
         MainActivity.AVRECORD_SERVICE_RUNNING = false;
+        MainActivity.mediaState = MainActivity.MEDIA_STATE_IDLE;
         localService = null;
     }
 
@@ -345,8 +381,10 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         avFeed.release();
         //avFeed.reset();
         if(loggingFile != null) {
+            RECORDING_HISTORY.add(0, loggingFile);
             Log.d(TAG, "loggingFile Total Space: " + loggingFile.getTotalSpace() / 1024 + " MB");
         }
+        avFeed = null;
         videoFeed.lock();
     }
 
@@ -357,15 +395,14 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         videoFeed.lock();
         videoFeed.stopPreview();
         videoFeed.release();
+        videoFeed = null;
     }
 
-    public void videoPreviewOn() {
-        videoFeed.startPreview();
-    }
-
-    public void videoPreviewOff() {
-        videoFeed.stopPreview();
-        //videoFeed.release();
+    public void releaseMediaPlayer() {
+        if(mPlayer == null)
+            return;
+        mPlayer.release();
+        mPlayer = null;
     }
 
     private static final int AVSERVICE_PROCID = 97736153;
@@ -386,6 +423,9 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
             startForeground(AVSERVICE_PROCID, getForegroundServiceNotify("We are currently recording audio only media now."));
             RuntimeStats.updateStatsUI(true, false);
             recordAudioOnlyNow(DEFAULT_AVQUALSPEC_ID);
+        }
+        else if(intentAction != null && intentAction.equals(MainActivity.PLAYBACK_RECORDING)) {
+            playbackMediaNow();
         }
     }
 
@@ -443,6 +483,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
 
     public void performOutputFileSwap() {
         try {
+            RECORDING_HISTORY.add(0, loggingFile);
             loggingFile = nextLoggingFile;
             LAST_RECORDING_FILEPATH = loggingFilePath = loggingFile.getAbsolutePath();
             nextLoggingFile = generateNewOutputFilePath();
@@ -471,12 +512,23 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     }
 
     public void pauseRecording() {
-        avFeed.pause();
-        isPaused = true;
+        if(LOCAL_AVSETTING == AVSETTING_PLAYBACK && mPlayer != null) {
+            mPlayer.pause();
+            mediaPlayerPosition = mPlayer.getCurrentPosition();
+            isPaused = true;
+        }
+        else if(avFeed != null) {
+            avFeed.pause();
+            isPaused = true;
+        }
     }
 
     public void resumeRecording() {
         if(isPaused()) {
+            mPlayer.seekTo(mediaPlayerPosition);
+            isPaused = false;
+        }
+        else if(isPaused()) {
             avFeed.resume();
             isPaused = false;
         }
@@ -535,11 +587,27 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         return true;
     }
 
+    public boolean playbackMediaNow() {
+        if(mPlayer == null)
+            mPlayer = new MediaPlayer();
+        releaseCamera();
+        setupMediaPlayer();
+        mPlayer.setSurface(new Surface(videoPreview));
+        mPlayer.prepareAsync();
+        Log.i(TAG, "Started Media Player.");
+        return true;
+    }
+
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         videoPreview = surface;
         videoPreviewView.setSurfaceTexture(surface);
-        videoFeed.startPreview();
+        if(LOCAL_AVSETTING != AVSETTING_PLAYBACK && videoFeed != null) {
+            videoFeed.startPreview();
+        }
+        else if(LOCAL_AVSETTING == AVSETTING_PLAYBACK) {
+            mPlayer.setSurface(new Surface(videoPreview));
+        }
     }
 
     @Override
