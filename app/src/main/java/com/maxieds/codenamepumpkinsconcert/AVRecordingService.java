@@ -8,11 +8,13 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.CamcorderProfile;
+import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -21,6 +23,10 @@ import android.os.Environment;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.widget.Spinner;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,24 +40,36 @@ public class AVRecordingService extends IntentService {
     public static int LOCAL_AVSETTING = AVSETTING_AUDIO_ONLY;
 
     private static final String AVSAVE_SUBFOLDER = "HomeBrewAVRecorder";
-    public static String DEFAULT_AVQUALSPEC_ID = MainActivity.DEFAULT_RECORDING_QUALITY;
     public static String AVOUTPUT_FILE_PREFIX = "pumpkins-atlanta";
+    public static String DEFAULT_AVQUALSPEC_ID = MainActivity.DEFAULT_RECORDING_QUALITY;
+    public static final long RECORDING_SLICE_MAXBYTES = 1073741824L; // 1GB = 1024MB
 
     public static AVRecordingService localService = null;
     private static boolean isRecording = false;
     private static boolean isRecordingAudioOnly = true;
-    private static File loggingFile;
+    private static File loggingFile, nextLoggingFile;
     private static String loggingFilePath;
     private static boolean videoFeedPreviewOn = false;
     private static boolean avFeedPreviewOn = false;
     private static boolean inErrorState = false;
     private static boolean isPaused = false;
-    public static String LAST_ERROR_MESSAGE = "";
+    public static String LAST_ERROR_MESSAGE = "NO ERROR";
     public static String LAST_RECORDING_FILEPATH = null;
+    public static String recordingSliceFormat;
+    public static int currentRecordingSlice;
     public static int dndInterruptionPolicy;
 
     private Camera videoFeed = null;
     private MediaRecorder avFeed = null;
+
+    public static SurfaceView videoPreview;
+    public static Surface persistentVideoSurface;
+    public static SurfaceHolder videoPreviewHolder;
+    public static Drawable videoPreviewBGOverlay;
+    public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
+    public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
+    public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
+    public static PowerManager.WakeLock bgWakeLock;
 
     public AVRecordingService() {
         super("AVRecordingService");
@@ -82,21 +100,31 @@ public class AVRecordingService extends IntentService {
         localService = this;
         MainActivity.AVRECORD_SERVICE_RUNNING = true;
         LAST_ERROR_MESSAGE = "NO ERROR";
-        DEFAULT_AVQUALSPEC_ID = MainActivity.videoOptsQuality.getSelectedItem().toString();
-        MainActivity.videoPreviewBGOverlay.setAlpha(0);
+        if(videoOptsQuality != null) {
+            DEFAULT_AVQUALSPEC_ID = videoOptsQuality.getSelectedItem().toString();
+        }
+        if(videoPreviewBGOverlay != null) {
+            videoPreviewBGOverlay.setAlpha(0);
+        }
+        try {
+            videoPreviewHolder = videoPreview.getHolder();
+            videoPreviewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        } catch(NullPointerException npe) {}
         if(MainActivity.setDoNotDisturb) {
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             dndInterruptionPolicy = notifyManager.getCurrentInterruptionFilter();
             notifyManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
         }
-        if(!MainActivity.bgWakeLock.isHeld()) {
-            MainActivity.bgWakeLock.acquire();
+        if(bgWakeLock != null && !bgWakeLock.isHeld()) {
+            bgWakeLock.acquire();
         }
+        recordingSliceFormat = getRecordingSliceFormatString();
+        currentRecordingSlice = 0;
         // acquire camera + mic resources + external storage file path:
         try {
             videoFeed = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK); // open the back-facing camera
             updateVideoFeedParams();
-            videoFeed.setPreviewDisplay(MainActivity.videoPreview.getHolder());
+            videoFeed.setPreviewDisplay(videoPreviewHolder);
             videoFeed.startPreview();
             videoFeedPreviewOn = true;
             inErrorState = false;
@@ -117,51 +145,60 @@ public class AVRecordingService extends IntentService {
         AVQualitySpec qspec = AVQualitySpec.stringToDefaultSpec(MainActivity.DEFAULT_RECORDING_QUALITY);
         videoParams.setPreviewSize(qspec.videoWidth, qspec.videoHeight);
         videoParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-        videoParams.setAntibanding(Utils.parseVideoConstantString(MainActivity.videoOptsAntiband.getSelectedItem().toString()));
-        videoParams.setColorEffect(Utils.parseVideoConstantString(MainActivity.videoOptsEffects.getSelectedItem().toString()));
-        videoParams.setFlashMode(Utils.parseVideoConstantString(MainActivity.videoOptsCameraFlash.getSelectedItem().toString()));
-        videoParams.setFocusMode(Utils.parseVideoConstantString(MainActivity.videoOptsFocus.getSelectedItem().toString()));
-        videoParams.setSceneMode(Utils.parseVideoConstantString(MainActivity.videoOptsScene.getSelectedItem().toString()));
-        videoParams.setWhiteBalance(Utils.parseVideoConstantString(MainActivity.videoOptsWhiteBalance.getSelectedItem().toString()));
+        try {
+            videoParams.setAntibanding(Utils.parseVideoConstantString(videoOptsAntiband.getSelectedItem().toString()));
+            videoParams.setColorEffect(Utils.parseVideoConstantString(videoOptsEffects.getSelectedItem().toString()));
+            videoParams.setFlashMode(Utils.parseVideoConstantString(videoOptsCameraFlash.getSelectedItem().toString()));
+            videoParams.setFocusMode(Utils.parseVideoConstantString(videoOptsFocus.getSelectedItem().toString()));
+            videoParams.setSceneMode(Utils.parseVideoConstantString(videoOptsScene.getSelectedItem().toString()));
+            videoParams.setWhiteBalance(Utils.parseVideoConstantString(videoOptsWhiteBalance.getSelectedItem().toString()));
+        } catch(NullPointerException npe) {}
         videoParams.setVideoStabilization(true);
         videoFeed.setParameters(videoParams);
-        videoFeed.setDisplayOrientation(Integer.valueOf(MainActivity.videoOptsRotation.getSelectedItem().toString()));
+        try {
+            videoFeed.setDisplayOrientation(Integer.valueOf(videoOptsRotation.getSelectedItem().toString()));
+        } catch(NullPointerException npe) {}
     }
 
     public void setupMediaRecorder(int audioSrc, int videoSrc, int outputFormat, String recordQuality) {
         try{
             avFeed = new MediaRecorder();
             videoFeed.unlock();
-            avFeed.setCamera(videoFeed);
-            avFeed.setAudioSource(audioSrc);
-            avFeed.setVideoSource(videoSrc);
-            Log.i(TAG, "About to set specific AUD / AV settings ...");
             if(LOCAL_AVSETTING == AVSETTING_AUDIO_ONLY) {
-                //avFeed.setInputSurface(MainActivity.videoPreview.getHolder().getSurface());
-                CamcorderProfile vprof;
-                if(DEFAULT_AVQUALSPEC_ID.length() >= 10 && !DEFAULT_AVQUALSPEC_ID.substring(0, 9).equals("TIME_LAPSE"))
-                     vprof = AVQualitySpec.stringToCamcorderSpec("TIME_LAPSE_" + DEFAULT_AVQUALSPEC_ID);
-                else
-                     vprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC_ID);
-                vprof.fileFormat = outputFormat;
-                Log.i(TAG, "AUD Recorder Profile: " + vprof.toString());
-                avFeed.setProfile(vprof);
-                avFeed.setCaptureRate(0.1); // one frame per 10 seconds
+                //try {
+                //    persistentVideoSurface = MediaCodec.createPersistentInputSurface();
+                //    avFeed.setInputSurface(persistentVideoSurface);
+                //} catch(NullPointerException npe) {}
+                avFeed.setAudioSource(audioSrc);
+                CamcorderProfile aprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC_ID);
+                avFeed.setOutputFormat(outputFormat);
+                avFeed.setAudioEncodingBitRate(aprof.audioBitRate);
+                avFeed.setAudioChannels(aprof.audioChannels);
+                avFeed.setAudioSamplingRate(aprof.audioSampleRate);
+                avFeed.setAudioEncoder(aprof.audioCodec);
             }
             else {
+                avFeed.setCamera(videoFeed);
+                avFeed.setAudioSource(audioSrc);
+                avFeed.setVideoSource(videoSrc);
                 CamcorderProfile cprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC_ID);
                 cprof.fileFormat = outputFormat;
-                Log.i(TAG, "AV Recorder Profile: " + cprof.toString());
                 avFeed.setProfile(cprof);
                 avFeed.setVideoEncodingProfileLevel(MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline, MediaCodecInfo.CodecProfileLevel.AVCLevel1);
-                avFeed.setOrientationHint(Integer.valueOf(MainActivity.videoOptsRotation.getSelectedItem().toString()));
+                try {
+                    avFeed.setOrientationHint(Integer.valueOf(videoOptsRotation.getSelectedItem().toString()));
+                } catch(NullPointerException npe) {}
             }
             loggingFile = generateNewOutputFilePath();
+            LAST_RECORDING_FILEPATH = loggingFile.getAbsolutePath();
             avFeed.setOutputFile(loggingFile);
+            avFeed.setMaxFileSize(RECORDING_SLICE_MAXBYTES);
             setLocationAttributes();
             setupAVFeedErrorHandling();
-            avFeed.setPreviewDisplay(MainActivity.videoPreview.getHolder().getSurface());
-            avFeedPreviewOn = true;
+            try {
+                avFeed.setPreviewDisplay(videoPreviewHolder.getSurface());
+                avFeedPreviewOn = true;
+            } catch(NullPointerException npe) {}
             avFeed.prepare();
             avFeed.start();
             RuntimeStats.init(loggingFilePath);
@@ -222,9 +259,9 @@ public class AVRecordingService extends IntentService {
                     case MediaPlayer.MEDIA_INFO_METADATA_UPDATE:
                         LAST_ERROR_MESSAGE = "INFO : METADATA UPDATE";
                         break;
-                    case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
-                        LAST_ERROR_MESSAGE = "INFO : NOT SEEKABLE";
-                        break;
+                    //case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
+                    //    LAST_ERROR_MESSAGE = "INFO : NOT SEEKABLE";
+                    //    break;
                     case MediaPlayer.MEDIA_INFO_SUBTITLE_TIMED_OUT:
                         LAST_ERROR_MESSAGE = "INFO : SUBTITLE TIMEOUT";
                         break;
@@ -242,6 +279,13 @@ public class AVRecordingService extends IntentService {
                         break;
                     case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
                         LAST_ERROR_MESSAGE = "INFO : VIDEO RENDER START";
+                        break;
+                    case MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED:
+                        LAST_ERROR_MESSAGE = "INFO : MAX FILE SIZE REACHED";
+                        performOutputFileSwap();
+                        break;
+                    case MediaRecorder.MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED:
+                        LAST_ERROR_MESSAGE = "INFO : NEXT SLICE STARTED";
                         break;
                     default:
                         LAST_ERROR_MESSAGE = "INFO : UNCAUGHT MSG";
@@ -268,19 +312,23 @@ public class AVRecordingService extends IntentService {
 
     @Override
     public void onDestroy() {
+        if(LOCAL_AVSETTING == AVSETTING_AUDIO_ONLY && persistentVideoSurface != null) {
+            persistentVideoSurface.release();
+        }
         releaseMediaRecorder();
         releaseCamera();
-        localService = null;
-        MainActivity.videoPreviewBGOverlay.setAlpha(255);
+        if(videoPreviewBGOverlay != null) {
+            videoPreviewBGOverlay.setAlpha(255);
+        }
         if(MainActivity.setDoNotDisturb) {
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notifyManager.setInterruptionFilter(dndInterruptionPolicy);
         }
         RuntimeStats.clear();
-        RuntimeStats.updateStatsUI(false);
+        RuntimeStats.updateStatsUI(false, true);
         stopForeground(Service.STOP_FOREGROUND_REMOVE);
         MainActivity.AVRECORD_SERVICE_RUNNING = false;
-        Log.i(TAG, "onDestroy() called");
+        localService = null;
     }
 
     public void releaseMediaRecorder() {
@@ -318,19 +366,21 @@ public class AVRecordingService extends IntentService {
             try {
                 videoFeed.lock();
                 videoFeed.reconnect();
-                videoFeed.setPreviewDisplay(MainActivity.videoPreview.getHolder());
-                videoFeed.startPreview();
                 if(isPaused())
                     resumeRecording();
+                videoFeed.setPreviewDisplay(videoPreviewHolder);
+                videoFeed.startPreview();
                 videoFeedPreviewOn = true;
             } catch(IOException ioe) {
                 Log.e(TAG, "Error in camera preview: " + ioe.getMessage());
                 inErrorState = true;
-            }
+            } catch(NullPointerException npe) {}
         }
         if(avFeed != null && !avFeedPreviewOn) {
-            avFeed.setPreviewDisplay(MainActivity.videoPreview.getHolder().getSurface());
-            avFeedPreviewOn = true;
+            try {
+                avFeed.setPreviewDisplay(videoPreviewHolder.getSurface());
+                avFeedPreviewOn = true;
+            } catch(NullPointerException npe) {}
         }
     }
 
@@ -339,7 +389,6 @@ public class AVRecordingService extends IntentService {
         if(videoFeed != null && videoFeedPreviewOn) {
             videoFeed.stopPreview();
             pauseRecording();
-            // unlock camera here?
             videoFeed.unlock();
             videoFeedPreviewOn = false;
         }
@@ -349,27 +398,31 @@ public class AVRecordingService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.i(TAG, intent.getAction());
+        if(intent == null) {
+            Log.w(TAG, "onHandleIntent passed a NULL intent object.");
+            return;
+        }
         String intentAction = intent.getAction();
-        Log.i(TAG, "onHandleIntent: action = " + intentAction);
         if(intentAction != null && intentAction.equals(MainActivity.RECORD_VIDEO)) {
-            startForeground(AVSERVICE_PROCID, getForegroundServiceNotify());
+            startForeground(AVSERVICE_PROCID, getForegroundServiceNotify("We are currently recording audio / video media now."));
+            RuntimeStats.updateStatsUI(true, false);
             recordVideoNow(DEFAULT_AVQUALSPEC_ID);
         }
         else if(intentAction != null && intentAction.equals(MainActivity.RECORD_AUDIO)) {
-            startForeground(AVSERVICE_PROCID, getForegroundServiceNotify());
+            startForeground(AVSERVICE_PROCID, getForegroundServiceNotify("We are currently recording audio only media now."));
+            RuntimeStats.updateStatsUI(true, false);
             recordAudioOnlyNow(DEFAULT_AVQUALSPEC_ID);
         }
     }
 
-    public Notification getForegroundServiceNotify() {
+    public Notification getForegroundServiceNotify(String bannerMsg) {
         Intent intent = new Intent(this, AVRecordingService.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder fgNotify = new NotificationCompat.Builder(this, NCHANNELID_TASK);
         fgNotify.setOngoing(true);
         fgNotify.setContentTitle("Home Brew Live Streamer")
-                .setContentText("We are currently recording / streaming audio video media now.")
+                .setContentText(bannerMsg)
                 .setSmallIcon(R.drawable.splogo)
                 .setWhen(System.currentTimeMillis())
                 .setCategory(Notification.CATEGORY_SERVICE)
@@ -377,9 +430,19 @@ public class AVRecordingService extends IntentService {
         return fgNotify.build();
     }
 
+    public void updateNotificationBanner(String bannerMsg) {
+        Notification nextNotifyBanner = getForegroundServiceNotify(bannerMsg);
+        NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notifyManager.notify(AVSERVICE_PROCID, nextNotifyBanner);
+    }
+
+    public static String getRecordingSliceFormatString() {
+        return String.format("%s-%s-slice%%d.mp4", AVOUTPUT_FILE_PREFIX, Utils.getTimestamp());
+    }
+
     public static File generateNewOutputFilePath() {
         String extStoragePathPrefix = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
-        String outputFilePath = String.format("%s-%s.mp4", AVOUTPUT_FILE_PREFIX, Utils.getTimestamp());
+        String outputFilePath = String.format(recordingSliceFormat, ++currentRecordingSlice);
         File outputFile;
         try {
             File outputDir = new File(extStoragePathPrefix, AVSAVE_SUBFOLDER);
@@ -399,8 +462,24 @@ public class AVRecordingService extends IntentService {
             return null;
         }
         loggingFilePath = outputFilePath;
-        LAST_RECORDING_FILEPATH = loggingFilePath;
         return outputFile;
+    }
+
+    public void performOutputFileSwap() {
+        try {
+            loggingFile = nextLoggingFile;
+            LAST_RECORDING_FILEPATH = loggingFilePath = loggingFile.getAbsolutePath();
+            nextLoggingFile = generateNewOutputFilePath();
+            avFeed.setNextOutputFile(nextLoggingFile);
+        } catch(IOException ioe) {
+            Log.e(TAG, "Setting next (# " + currentRecordingSlice + ") recording slice : " + ioe.getMessage());
+        }
+    }
+
+    public static double getCurrentDiskUsage() {
+        if(localService == null || loggingFile == null)
+            return 0.0;
+        return loggingFile.getTotalSpace() / 1024.0; // in MB
     }
 
     public static boolean isRecording() {

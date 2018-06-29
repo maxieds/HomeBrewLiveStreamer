@@ -20,6 +20,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -53,11 +54,8 @@ public class MainActivity extends AppCompatActivity {
     private static TabLayout tabLayout;
     private static int selectedTab = TAB_LIVE_PANEL;
     private static ViewPager.OnPageChangeListener tabChangeListener = null;
-    public static CameraPreview videoCameraPreview;
     public static TextView tvLoggingMessages;
     public static String DEFAULT_RECORDING_QUALITY = "SDMEDIUM";
-    public static SurfaceView videoPreview;
-    public static Drawable videoPreviewBGOverlay;
     private static ServiceConnection recordServiceConn = new ServiceConnection() {
         public AVRecordingService recService;
         public void onServiceConnected(ComponentName className, IBinder binder) {
@@ -69,12 +67,8 @@ public class MainActivity extends AppCompatActivity {
             recService = null;
         }
     };
-    public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
-    public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
-    public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
     public static boolean setDoNotDisturb = true;
     public static boolean AVRECORD_SERVICE_RUNNING = false;
-    public static PowerManager.WakeLock bgWakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,8 +108,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.runningActivity.getSupportActionBar().setDisplayUseLogoEnabled(false);
                 }
                 else if(MainActivity.selectedTab == TAB_COVERT_MODE) {
-                    ((TabHost) MainActivity.runningActivity.findViewById(R.id.tab_host)).setCurrentTab(TAB_COVERT_MODE);
-                    return;
+                    actionButtonCovertModeToLive(null); // restore the navigation if the user flicks screens
                 }
                 MainActivity.selectedTab = position;
             }
@@ -135,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         tabLayout.addTab(tabLayout.newTab().setText(tfPagerAdapter.getPageTitle(TAB_ABOUT)));
         tabLayout.setupWithViewPager(viewPager);
 
-        viewPager.setOffscreenPageLimit(TabFragmentPagerAdapter.TAB_COUNT - 1);
+        viewPager.setOffscreenPageLimit(TabFragmentPagerAdapter.TAB_COUNT);
         viewPager.setCurrentItem(selectedTab);
         tfPagerAdapter.notifyDataSetChanged();
 
@@ -161,7 +154,6 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.INTERNET",
                 "android.permission.ACCESS_NOTIFICATION_POLICY",
                 "android.permission.BLUETOOTH",
-                //"android.permission.BLUETOOTH_ADMIN",
                 "android.permission.WAKE_LOCK",
                 "android.permission.VIBRATE",
                 "android.permission.ACCESS_COARSE_LOCATION",
@@ -170,9 +162,6 @@ public class MainActivity extends AppCompatActivity {
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
         ActivityCompat.requestPermissions(this, permissions, 200);
-        for(int p = 0; p < permissions.length; p++) {
-            Log.i(TAG, permissions[p] + ": " + (hasPermission(permissions[p]) ? "YES" : "NOT APPROVED"));
-        }
 
         // and special case for the particularly important one of silencing the phone when recording:
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -181,8 +170,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-        // start a timer to update the stats UI on the screen periodically:
-        RuntimeStats.updateStatsUI(true);
+        RuntimeStats.updateStatsUI(false, true);
 
     }
 
@@ -200,6 +188,9 @@ public class MainActivity extends AppCompatActivity {
         //if(AVRecordingService.localService != null) {
         //    AVRecordingService.localService.previewOff();
         //}
+        if(AVRECORD_SERVICE_RUNNING) {
+            RuntimeStats.statsUpdateHandler.removeCallbacks(RuntimeStats.statsUpdateRunnableForeground);
+        }
     }
 
     @Override
@@ -209,6 +200,9 @@ public class MainActivity extends AppCompatActivity {
         //if(AVRecordingService.localService != null) {
         //    AVRecordingService.localService.previewOn();
         //}
+        if(AVRECORD_SERVICE_RUNNING) {
+            RuntimeStats.updateStatsUI(true, true);
+        }
     }
 
     @Override
@@ -231,17 +225,34 @@ public class MainActivity extends AppCompatActivity {
 
     private void acquireWakeLock() {
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer");
-        bgWakeLock.acquire();
+        AVRecordingService.bgWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Homebrew Live Streamer");
+        AVRecordingService.bgWakeLock.acquire();
     }
 
     private void releaseWakeLock() {
-        if(bgWakeLock == null) {
+        if(AVRecordingService.bgWakeLock == null) {
             Log.w(TAG, "BGWakeLock is NULL ... Cannot release it.");
             return;
         }
-        bgWakeLock.release(1);
-        bgWakeLock = null;
+        AVRecordingService.bgWakeLock.release(1);
+        AVRecordingService.bgWakeLock = null;
+    }
+
+    private void turnOffDisplayScreen() {
+        WindowManager.LayoutParams lparams = new WindowManager.LayoutParams();
+        //lparams.flags |= WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON;
+        lparams.screenBrightness = 1;
+        getWindow().setAttributes(lparams);
+        //setShowWhenLocked(true);
+        //setTurnScreenOn(false);
+    }
+
+    private void restoreDisplayScreen() {
+        WindowManager.LayoutParams lparams = getWindow().getAttributes();
+        lparams.screenBrightness = -1;
+        getWindow().setAttributes(lparams);
+        //setShowWhenLocked(false);
+        //setTurnScreenOn(true);
     }
 
     public void actionButtonCovertModeToLive(View button) {
@@ -268,7 +279,6 @@ public class MainActivity extends AppCompatActivity {
                 AVRecordingService.LOCAL_AVSETTING = navAction.equals(RECORD_VIDEO) ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
                 Intent startRecordingService = new Intent(this, AVRecordingService.class);
                 startRecordingService.setAction(navAction);
-                startRecordingService.putExtra("RECORDOPTS", navAction);
                 //startForegroundService(startRecordingService);
                 acquireWakeLock();
                 startService(startRecordingService);
@@ -278,11 +288,11 @@ public class MainActivity extends AppCompatActivity {
             else if(AVRecordingService.isPaused()) {
                 if(AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_VIDEO)) {
                     AVRecordingService.localService.resumeRecording();
-                    AVRecordingService.localService.recordVideoNow(videoOptsQuality.getSelectedItem().toString());
+                    AVRecordingService.localService.recordVideoNow(AVRecordingService.videoOptsQuality.getSelectedItem().toString());
                 }
                 else if(!AVRecordingService.isRecordingAudioOnly() && navAction.equals(RECORD_AUDIO)) {
                     AVRecordingService.localService.resumeRecording();
-                    AVRecordingService.localService.recordAudioOnlyNow(videoOptsQuality.getSelectedItem().toString());
+                    AVRecordingService.localService.recordAudioOnlyNow(AVRecordingService.videoOptsQuality.getSelectedItem().toString());
                 }
                 else {
                     AVRecordingService.localService.resumeRecording();
@@ -293,7 +303,8 @@ public class MainActivity extends AppCompatActivity {
                 AVRecordingService.localService.toggleAudioVideo(DEFAULT_RECORDING_QUALITY);
             }
             RuntimeStats.init(AVRecordingService.LAST_RECORDING_FILEPATH);
-            RuntimeStats.updateStatsUI(restartStatsTimer);
+            RuntimeStats.updateStatsUI(restartStatsTimer, true);
+            //turnOffDisplayScreen();
         }
         else if(navAction.equals(PAUSE_RECORDING) && AVRecordingService.isRecording()) {
             AVRecordingService.localService.pauseRecording();
@@ -323,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
         stopService(stopRecordingService);
         unbindService(recordServiceConn);
         RuntimeStats.clear();
-        RuntimeStats.updateStatsUI(false);
+        //restoreDisplayScreen();
         writeLoggingData("INFO", "Paused / stopped current recording session.");
     }
 

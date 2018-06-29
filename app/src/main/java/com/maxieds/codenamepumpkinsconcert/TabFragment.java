@@ -120,9 +120,9 @@ public class TabFragment extends Fragment {
         if(tabNumber == TAB_COVERT_MODE) {}
         else if(tabNumber == TAB_LIVE_PANEL) {
 
-            MainActivity.videoPreview = (SurfaceView) inflatedView.findViewById(R.id.camera_preview);
-            MainActivity.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
-            MainActivity.videoPreview.setBackgroundDrawable(MainActivity.videoPreviewBGOverlay);
+            AVRecordingService.videoPreview = (SurfaceView) inflatedView.findViewById(R.id.camera_preview);
+            AVRecordingService.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
+            AVRecordingService.videoPreview.setBackgroundDrawable(AVRecordingService.videoPreviewBGOverlay);
 
             TextView tvLoggingMessages = new TextView(MainActivity.runningActivity); //(TextView) inflatedView.findViewById(R.id.textLogging);
             tvLoggingMessages.setTypeface(Typeface.MONOSPACE, Typeface.BOLD_ITALIC);
@@ -140,16 +140,16 @@ public class TabFragment extends Fragment {
         else if(tabNumber == TAB_TOOLS) {
             // we can't easily modify the video settings when the recorder is running, so we don't need peripheral adapters for these,
             // but we do want to make sure that we can find them when we start a recording to set these video options:
-            MainActivity.videoOptsAntiband = (Spinner) inflatedView.findViewById(R.id.videoOptsAntibandSpinner);
-            MainActivity.videoOptsEffects = (Spinner) inflatedView.findViewById(R.id.videoOptsEffectsSpinner);
-            MainActivity.videoOptsCameraFlash = (Spinner) inflatedView.findViewById(R.id.videoOptsCameraFlashSpinner);
-            MainActivity.videoOptsFocus = (Spinner) inflatedView.findViewById(R.id.videoOptsFocusSpinner);
-            MainActivity.videoOptsScene = (Spinner) inflatedView.findViewById(R.id.videoOptsSceneSpinner);
-            MainActivity.videoOptsWhiteBalance = (Spinner) inflatedView.findViewById(R.id.videoOptsWhiteBalanceSpinner);
-            MainActivity.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
-            MainActivity.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
-            MainActivity.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
-            MainActivity.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
+            AVRecordingService.videoOptsAntiband = (Spinner) inflatedView.findViewById(R.id.videoOptsAntibandSpinner);
+            AVRecordingService.videoOptsEffects = (Spinner) inflatedView.findViewById(R.id.videoOptsEffectsSpinner);
+            AVRecordingService.videoOptsCameraFlash = (Spinner) inflatedView.findViewById(R.id.videoOptsCameraFlashSpinner);
+            AVRecordingService.videoOptsFocus = (Spinner) inflatedView.findViewById(R.id.videoOptsFocusSpinner);
+            AVRecordingService.videoOptsScene = (Spinner) inflatedView.findViewById(R.id.videoOptsSceneSpinner);
+            AVRecordingService.videoOptsWhiteBalance = (Spinner) inflatedView.findViewById(R.id.videoOptsWhiteBalanceSpinner);
+            AVRecordingService.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
+            AVRecordingService.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
+            AVRecordingService.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
+            AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
 
             AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -162,13 +162,13 @@ public class TabFragment extends Fragment {
                 }
             };
 
-            MainActivity.videoOptsAntiband.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsEffects.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsCameraFlash.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsFocus.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsScene.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
-            MainActivity.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsAntiband.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsEffects.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsCameraFlash.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsFocus.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsScene.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
 
         }
         else if(tabNumber == TAB_SETTINGS) {}
