@@ -36,6 +36,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.hardware.Camera;
 
+import com.singhajit.sherlock.core.Sherlock;
+
+import static android.os.Process.killProcess;
 import static android.os.Process.myPid;
 import static android.os.Process.myUid;
 import static com.maxieds.codenamepumpkinsconcert.TabFragment.TAB_ABOUT;
@@ -74,9 +77,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        if(!isTaskRoot()) {
-
-        }
+        Sherlock.init(this); // for non-production sanity with debugging A/V under Android ...
+        if(!isTaskRoot()) {}
         setContentView(R.layout.activity_main);
         runningActivity = this;
         defaultInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -156,12 +158,17 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.BLUETOOTH",
                 "android.permission.WAKE_LOCK",
                 "android.permission.VIBRATE",
-                "android.permission.ACCESS_COARSE_LOCATION",
-                "android.permission.BATTERY_STATS"
+                "android.permission.ACCESS_COARSE_LOCATION"
         };
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
-        ActivityCompat.requestPermissions(this, permissions, 200);
+        else
+            ActivityCompat.requestPermissions(this, permissions, 200);
+        for(int p = 0; p < permissions.length; p++) {
+            if(!hasPermission(permissions[p])) {
+                Log.w(TAG, "Lacking permission " + permissions[p] + " from the user.");
+            }
+        }
 
         // and special case for the particularly important one of silencing the phone when recording:
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -170,6 +177,18 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread paramThread, Throwable paramThrowable) {
+                Log.e(TAG,"Cleaning up after uncaught exception.");
+                stopAVRecordingService();
+                paramThread.getThreadGroup().destroy();
+                Log.e(TAG, Log.getStackTraceString(paramThrowable));
+                Log.e(TAG, "UNCAUGHT EXCPT(" + paramThrowable.getClass().getSimpleName() + ") : " + paramThrowable.getMessage());
+                killProcess(myPid());
+                System.exit(-1);
+            }
+        });
         RuntimeStats.updateStatsUI(false, true);
 
     }
@@ -209,9 +228,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING) {
-            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            stopService(stopRecordingService);
-            unbindService(recordServiceConn);
+            stopAVRecordingService();
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
         }
@@ -240,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void turnOffDisplayScreen() {
         WindowManager.LayoutParams lparams = new WindowManager.LayoutParams();
-        //lparams.flags |= WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON;
+        lparams.flags |= WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON;
         lparams.screenBrightness = 1;
         getWindow().setAttributes(lparams);
         //setShowWhenLocked(true);
@@ -251,8 +268,8 @@ public class MainActivity extends AppCompatActivity {
         WindowManager.LayoutParams lparams = getWindow().getAttributes();
         lparams.screenBrightness = -1;
         getWindow().setAttributes(lparams);
-        //setShowWhenLocked(false);
-        //setTurnScreenOn(true);
+        setShowWhenLocked(false);
+        setTurnScreenOn(true);
     }
 
     public void actionButtonCovertModeToLive(View button) {
@@ -329,12 +346,14 @@ public class MainActivity extends AppCompatActivity {
             Log.w(TAG, "AVRecordingService is NOT running ... Unable to stop it.");
             return;
         }
-        Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-        releaseWakeLock();
-        stopService(stopRecordingService);
-        unbindService(recordServiceConn);
-        RuntimeStats.clear();
-        //restoreDisplayScreen();
+        try {
+            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
+            releaseWakeLock();
+            stopService(stopRecordingService);
+            unbindService(recordServiceConn);
+            RuntimeStats.clear();
+            //restoreDisplayScreen();
+        } catch(Exception ise) {}
         writeLoggingData("INFO", "Paused / stopped current recording session.");
     }
 

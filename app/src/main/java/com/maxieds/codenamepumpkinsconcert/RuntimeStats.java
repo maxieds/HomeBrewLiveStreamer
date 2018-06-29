@@ -128,7 +128,7 @@ public class RuntimeStats {
         String battery = String.format("%s: %s", "Battery Used", getBatteryPercentUsed());
         String video = String.format("%s %s", "", getVideoRecordingSummary());
         String audio = String.format("%s %s", "", getAudioRecordingSummary());
-        String currentDiskUsage = String.format("%s: %.2g MB", "Recording Space Used", AVRecordingService.getCurrentDiskUsage());
+        String currentDiskUsage = String.format("%.2g MB", AVRecordingService.getCurrentDiskUsage());
         return new String[] {recordMode, duration, fileOutput, runtimeAlertStatus, memDisk, battery, video, audio, currentDiskUsage};
     }
 
@@ -161,8 +161,7 @@ public class RuntimeStats {
             ((TextView) MainActivity.runningActivity.findViewById(R.id.statsAudio)).setText(bannerStats[AUDIO_STATUS]);
         }
         else if(!foregroundMode && AVRecordingService.localService != null) {
-            String notificationBanner = String.format("%s\n%s\n%s\n%s\n%s", bannerStats[AUDIO_STATUS], bannerStats[VIDEO_STATUS],
-                                                      bannerStats[DISK_USAGE_STATUS], bannerStats[DURATION_STATUS], bannerStats[RUNTIME_ALERT_STATUS]);
+            String notificationBanner = String.format("%s\n%s\n%s", bannerStats[DISK_USAGE_STATUS], bannerStats[DURATION_STATUS], bannerStats[RUNTIME_ALERT_STATUS]);
             AVRecordingService.localService.updateNotificationBanner(notificationBanner);
         }
 

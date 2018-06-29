@@ -25,6 +25,8 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/streaminglogo32"
         android:supportsRtl="true"
+        android:largeHeap="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
