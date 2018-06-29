@@ -204,9 +204,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         // do not disable anything when the phone is paused to keep the recording service running throughout:
-        //if(AVRecordingService.localService != null) {
-        //    AVRecordingService.localService.previewOff();
-        //}
+        if(AVRecordingService.localService != null) {
+            AVRecordingService.localService.videoPreviewOff();
+        }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.statsUpdateHandler.removeCallbacks(RuntimeStats.statsUpdateRunnableForeground);
         }
@@ -215,10 +215,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // do not disable anything when the phone is paused to keep the recording service running throughout:
-        //if(AVRecordingService.localService != null) {
-        //    AVRecordingService.localService.previewOn();
-        //}
+        // do not disable anything else but the screen when the phone is paused to keep the recording service running throughout:
+        if(AVRecordingService.localService != null) { // reconnect the surface to the camera:
+            AVRecordingService.localService.videoPreviewOn();
+        }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.updateStatsUI(true, true);
         }

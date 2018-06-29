@@ -103,9 +103,6 @@ public class AVRecordingService extends IntentService {
         if(videoOptsQuality != null) {
             DEFAULT_AVQUALSPEC_ID = videoOptsQuality.getSelectedItem().toString();
         }
-        if(videoPreviewBGOverlay != null) {
-            videoPreviewBGOverlay.setAlpha(0);
-        }
         try {
             videoPreviewHolder = videoPreview.getHolder();
             videoPreviewHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -370,6 +367,19 @@ public class AVRecordingService extends IntentService {
         videoFeed.release();
     }
 
+    public void videoPreviewOn() {
+        try {
+            videoFeed.reconnect();
+            videoFeed.startPreview();
+        } catch(IOException ioe) {
+            Log.e(TAG, "Reconnecting video preview : " + ioe.getMessage());
+        }
+    }
+
+    public void videoPreviewOff() {
+        videoFeed.stopPreview();
+    }
+
     private static final int AVSERVICE_PROCID = 97736153;
 
     @Override
@@ -429,7 +439,6 @@ public class AVRecordingService extends IntentService {
                 throw new IOException("Unable to create directories for writing.");
             }
             outputFile = new File(outputDir.getPath() + File.separator + outputFilePath);
-            Log.i(TAG, "OUTPUT FILE: " + outputFile.getAbsolutePath());
             outputFile.createNewFile();
             outputFile.setReadable(true, false);
             outputFilePath = outputFile.getAbsolutePath();
@@ -514,6 +523,9 @@ public class AVRecordingService extends IntentService {
     public boolean recordAudioOnlyNow(String recordingQuality) {
         LOCAL_AVSETTING = AVSETTING_AUDIO_ONLY;
         inErrorState = false;
+        if(videoPreviewBGOverlay != null) {
+            videoPreviewBGOverlay.setAlpha(127);
+        }
         setupMediaRecorder(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.VideoSource.SURFACE, MediaRecorder.OutputFormat.AAC_ADTS, recordingQuality);
         isRecording = true;
         isPaused = false;
@@ -524,6 +536,9 @@ public class AVRecordingService extends IntentService {
     public boolean recordVideoNow(String recordingQuality) {
         LOCAL_AVSETTING = AVSETTING_AUDIO_VIDEO;
         inErrorState = false;
+        if(videoPreviewBGOverlay != null) {
+            videoPreviewBGOverlay.setAlpha(0);
+        }
         setupMediaRecorder(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.VideoSource.CAMERA, MediaRecorder.OutputFormat.MPEG_4, recordingQuality);
         isRecording = true;
         isPaused = false;
