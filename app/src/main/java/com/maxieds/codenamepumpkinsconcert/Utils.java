@@ -3,7 +3,16 @@ package com.maxieds.codenamepumpkinsconcert;
 import android.media.AudioAttributes;
 import android.media.CamcorderProfile;
 import android.media.MediaPlayer;
+import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
+import android.media.audiofx.AutomaticGainControl;
+import android.media.audiofx.BassBoost;
+import android.media.audiofx.EnvironmentalReverb;
+import android.media.audiofx.Equalizer;
+import android.media.audiofx.LoudnessEnhancer;
+import android.media.audiofx.NoiseSuppressor;
+import android.media.audiofx.PresetReverb;
+import android.media.audiofx.Virtualizer;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -189,28 +198,28 @@ public class Utils {
         }
     }
 
-    public static java.util.UUID getAVPlaybackAudioEffectType(String effectStr) {
+    public static int getAVPlaybackAudioEffectType(String effectStr, int audioSessionID) {
         switch(effectStr) {
             case "AUTO_ECHO_CANCELLATION":
-                return AudioEffect.EFFECT_TYPE_AEC;
+                return AcousticEchoCanceler.create(audioSessionID).getId();
             case "AUTO_GAIN_CONTROL":
-                return AudioEffect.EFFECT_TYPE_AGC;
+                return AutomaticGainControl.create(audioSessionID).getId();
             case "BASS_BOOST":
-                return AudioEffect.EFFECT_TYPE_BASS_BOOST;
+                return new BassBoost(0, audioSessionID).getId();
             case "ENV_REVERB":
-                return AudioEffect.EFFECT_TYPE_ENV_REVERB;
+                return new EnvironmentalReverb(0, audioSessionID).getId();
             case "EQUALIZER":
-                return AudioEffect.EFFECT_TYPE_EQUALIZER;
+                return new Equalizer(0, audioSessionID).getId();
             case "LOUDNESS_ENHANCER":
-                return AudioEffect.EFFECT_TYPE_LOUDNESS_ENHANCER;
+                return new LoudnessEnhancer(audioSessionID).getId();
             case "NOISE_SUPPRESSOR":
-                return AudioEffect.EFFECT_TYPE_NS;
+                return NoiseSuppressor.create(audioSessionID).getId();
             case "PRESET_REVERB":
-                return AudioEffect.EFFECT_TYPE_PRESET_REVERB;
+                return new PresetReverb(0, audioSessionID).getId();
             case "VIRTUALIZER":
-                return AudioEffect.EFFECT_TYPE_VIRTUALIZER;
+                return new Virtualizer(0, audioSessionID).getId();
             default:
-                return null;
+                return 0;
         }
     }
 

@@ -11,10 +11,12 @@ import android.content.Intent;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
+import android.media.AudioAttributes;
 import android.media.CamcorderProfile;
 import android.media.MediaCodecInfo;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.media.audiofx.AudioEffect;
 import android.os.Build;
 import android.os.Environment;
 import android.os.PowerManager;
@@ -227,6 +229,16 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
             historyPlaybackIndex = 0;
             currentHistoryTrack = new FileInputStream(RECORDING_HISTORY.get(historyPlaybackIndex));
             mPlayer.setDataSource(currentHistoryTrack.getFD());
+            try {
+                //int attachedEffect = Utils.getAVPlaybackAudioEffectType(audioPlaybackOptsEffectType.getSelectedItem().toString(), mPlayer.getAudioSessionId());
+                //mPlayer.attachAuxEffect(attachedEffect);
+                //mPlayer.setAuxEffectSendLevel(0.5f);
+                //AudioAttributes audioAttr = new AudioAttributes.Builder()
+                //        .setUsage(AudioAttributes.USAGE_MEDIA)
+                //        .setContentType(Utils.getAVPlaybackContentType(videoPlaybackOptsContentType.getSelectedItem().toString()))
+                //        .build();
+                //mPlayer.setAudioAttributes(audioAttr);
+            } catch(NullPointerException npe) {}
             mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
