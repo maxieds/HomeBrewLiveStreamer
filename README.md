@@ -1,5 +1,7 @@
 # HomeBrewLiveStreamer
 
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/app/src/main/res/drawable/streaminglogo128.png" width="128" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/app/src/main/res/drawable/streaminglogo32.png" width="128" />
+
 ## Application description
 
 The application is a customizable, roll-your-own solution for live A/V recording to your 
