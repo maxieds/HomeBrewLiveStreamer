@@ -12,7 +12,7 @@ Facebook or Snapchat by default. Future versions of the application will include
 feature set and have options for live streaming applications to friend devices over the network 
 (see the future / wishlist features list below). As the application matures slightly, the 
 releases will include signed binary APKs for users to download and install without the need for 
-compiling the source in Android Studio.
+compiling the source in Android Studio. Please see our [Privacy Policy](https://github.com/maxieds/HomeBrewLiveStreamer/wiki/PrivacyPolicy) (required per Google Play Store listing) for information on how the application manages its usage of sensitive Android permissions.
 
 ## Future features
 
