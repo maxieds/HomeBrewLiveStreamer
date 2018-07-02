@@ -23,7 +23,4 @@ compiling the source in Android Studio. Please see our [Privacy Policy](https://
 
 ## Screenshots
 
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180628-001510.png" width="250" />
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180628-001502.png" width="250" />
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180702-004254.png" width="250" />
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180702-004303.png" width="250" />
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180628-001510.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180628-001502.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180702-004254.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180702-004303.png" width="250" />
