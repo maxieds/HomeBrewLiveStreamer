@@ -149,11 +149,6 @@ public class TabFragment extends Fragment {
             AVRecordingService.videoOptsFocus = (Spinner) inflatedView.findViewById(R.id.videoOptsFocusSpinner);
             AVRecordingService.videoOptsScene = (Spinner) inflatedView.findViewById(R.id.videoOptsSceneSpinner);
             AVRecordingService.videoOptsWhiteBalance = (Spinner) inflatedView.findViewById(R.id.videoOptsWhiteBalanceSpinner);
-            AVRecordingService.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
-            AVRecordingService.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
-            AVRecordingService.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
-            AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
-
             AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                     if(AVRecordingService.localService != null) {
@@ -164,17 +159,35 @@ public class TabFragment extends Fragment {
                     return;
                 }
             };
-
             AVRecordingService.videoOptsAntiband.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsEffects.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsCameraFlash.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsFocus.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsScene.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
-            AVRecordingService.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
-
         }
-        else if(tabNumber == TAB_SETTINGS) {}
+        else if(tabNumber == TAB_SETTINGS) {
+            AVRecordingService.tvOutputFilePrefix = (TextView) inflatedView.findViewById(R.id.outputFilePrefixSetting);
+            AVRecordingService.tvMaxFileSliceSize = (TextView) inflatedView.findViewById(R.id.maxFileSliceSizeSetting);
+            AVRecordingService.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
+            AVRecordingService.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
+            AVRecordingService.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
+            AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
+            AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    if(AVRecordingService.localService != null) {
+                        AVRecordingService.localService.updateVideoFeedParams();
+                    }
+                }
+                public void onNothingSelected(AdapterView<?> adapterView) {
+                    return;
+                }
+            };
+            AVRecordingService.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoOptsQuality.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.videoPlaybackOptsContentType.setOnItemSelectedListener(spinnerItemSelectedListener);
+            AVRecordingService.audioPlaybackOptsEffectType.setOnItemSelectedListener(spinnerItemSelectedListener);
+        }
         else if(tabNumber == TAB_ABOUT) {
 
             String rawAboutStr = MainActivity.runningActivity.getString(R.string.apphtmlheader);

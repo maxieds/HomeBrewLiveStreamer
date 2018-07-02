@@ -26,6 +26,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.TextureView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,6 +83,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     public static Spinner videoOptsAntiband, videoOptsEffects, videoOptsCameraFlash;
     public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
     public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
+    public static TextView tvOutputFilePrefix, tvMaxFileSliceSize;
     public static PowerManager.WakeLock bgWakeLock;
 
     public AVRecordingService() {
@@ -205,7 +207,13 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
                 } catch(NullPointerException npe) {}
             }
             avFeed.setOutputFile(loggingFile);
-            avFeed.setMaxFileSize(RECORDING_SLICE_MAXBYTES);
+            long fileSliceMaxBytes = RECORDING_SLICE_MAXBYTES;
+            try {
+                fileSliceMaxBytes = (long) Integer.parseInt(tvMaxFileSliceSize.getText().toString()) * 1048576L;
+            } catch(Exception nfe) {
+                Log.e(TAG, "Error parsing max file slice MB's: " + nfe.getMessage());
+            }
+            avFeed.setMaxFileSize(fileSliceMaxBytes);
             setupAVFeedErrorHandling();
             avFeed.prepare();
             avFeed.start();
@@ -233,11 +241,11 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
                 //int attachedEffect = Utils.getAVPlaybackAudioEffectType(audioPlaybackOptsEffectType.getSelectedItem().toString(), mPlayer.getAudioSessionId());
                 //mPlayer.attachAuxEffect(attachedEffect);
                 //mPlayer.setAuxEffectSendLevel(0.5f);
-                //AudioAttributes audioAttr = new AudioAttributes.Builder()
-                //        .setUsage(AudioAttributes.USAGE_MEDIA)
-                //        .setContentType(Utils.getAVPlaybackContentType(videoPlaybackOptsContentType.getSelectedItem().toString()))
-                //        .build();
-                //mPlayer.setAudioAttributes(audioAttr);
+                AudioAttributes audioAttr = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(Utils.getAVPlaybackContentType(videoPlaybackOptsContentType.getSelectedItem().toString()))
+                        .build();
+                mPlayer.setAudioAttributes(audioAttr);
             } catch(NullPointerException npe) {}
             mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
@@ -466,6 +474,9 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     }
 
     public static String getRecordingSliceFormatString() {
+        if(tvOutputFilePrefix != null && !tvOutputFilePrefix.getText().toString().equals("")) {
+            AVOUTPUT_FILE_PREFIX = tvOutputFilePrefix.getText().toString();
+        }
         return String.format("%s-%s-slice%%d.mp4", AVOUTPUT_FILE_PREFIX, Utils.getTimestamp());
     }
 
