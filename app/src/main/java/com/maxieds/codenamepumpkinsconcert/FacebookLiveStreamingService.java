@@ -7,33 +7,23 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.media.CamcorderProfile;
+import android.media.MediaFormat;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.facebook.AccessToken;
-import com.facebook.CallbackManager;
-import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
-import com.facebook.login.widget.LoginButton;
 
-import com.maxieds.codenamepumpkinsconcert.libstreaming.Session;
-import com.maxieds.codenamepumpkinsconcert.libstreaming.SessionBuilder;
-import com.maxieds.codenamepumpkinsconcert.libstreaming.audio.AudioQuality;
-import com.maxieds.codenamepumpkinsconcert.libstreaming.rtsp.RtspClient;
-import com.maxieds.codenamepumpkinsconcert.libstreaming.video.VideoQuality;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
-
 import net.ossrs.rtmp.ConnectCheckerRtmp;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class FacebookLiveStreamingService extends IntentService implements ConnectCheckerRtmp {
 
@@ -48,8 +38,8 @@ public class FacebookLiveStreamingService extends IntentService implements Conne
     public static TextView tvPostURL, tvStreamKey;
     public static Spinner streamingMediaTypeSpinner;
 
-    private static String FBSTREAM_POSTURL;
-    private static String FBSTREAM_SKEY;
+    private static String FBSTREAM_POSTURL = "";
+    private static String FBSTREAM_SKEY = "";
     public static boolean fbInitialized = false;
     public static boolean shuttingDown = false;
     private static AccessToken loginAccessToken;
@@ -57,8 +47,6 @@ public class FacebookLiveStreamingService extends IntentService implements Conne
     public static String DEFAULT_AVQUALSPEC = MainActivity.DEFAULT_RECORDING_QUALITY;
     public static int LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_VIDEO;
 
-    private static Session streamingSession;
-    private static RtspClient streamingClient;
     private static RtmpCamera1 rtmpCamera1;
 
     public FacebookLiveStreamingService() {
@@ -88,7 +76,7 @@ public class FacebookLiveStreamingService extends IntentService implements Conne
             boolean fbLoggedIn = loginAccessToken != null && !loginAccessToken.isExpired();
             if(!fbLoggedIn) {
                 Log.w(TAG, "Facebook user not logged in .. stopping service.");
-                preemtivelyTerminateService()
+                preemtivelyTerminateService();
             }
         }
 
@@ -108,68 +96,45 @@ public class FacebookLiveStreamingService extends IntentService implements Conne
     }
 
     public void startStreamingClient() {
-
-        rtmpCamera1 = new RtmpCamera1(AVRecordingService.videoPreviewView, this);
-        if (rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-            rtmpCamera1.startStream(FBSTREAM_POSTURL + FBSTREAM_SKEY);
-            Log.i(TAG, "Streaming to: " + FBSTREAM_POSTURL + FBSTREAM_SKEY);
-        }
-        else {
-            Log.e(TAG, "Unable to start the RTMP camera.");
-            rtmpCamera1.stopStream();
-            preemtivelyTerminateService()
-        }
-    }
-
-    public void startStreamingClientv2() {
-        // setup the RTSP streaming client to the Facebook server:
-        AVQualitySpec qspec = AVQualitySpec.stringToDefaultSpec(DEFAULT_AVQUALSPEC);
-        CamcorderProfile cprof = AVQualitySpec.stringToCamcorderSpec(DEFAULT_AVQUALSPEC);
-        int videoEncoder = LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_ONLY ? SessionBuilder.VIDEO_NONE : SessionBuilder.VIDEO_H264;
         try {
-            int cameraPosition = MainActivity.cameraWhichSpinner.getSelectedItemPosition();
-            streamingSession = SessionBuilder.getInstance()
-                    .setContext(getApplicationContext())
-                    .setAudioEncoder(SessionBuilder.AUDIO_AAC)
-                    .setAudioQuality(new AudioQuality(cprof.audioSampleRate, cprof.audioBitRate))
-                    .setVideoEncoder(videoEncoder)
-                    .setVideoQuality(new VideoQuality(cprof.videoFrameWidth, cprof.videoFrameHeight, cprof.videoFrameRate, cprof.videoBitRate))
-                    .setFlashEnabled(false)
-                    .setCamera(cameraPosition)
-                    .build();
-        } catch(Exception ioe) {
-            Log.e(TAG, ioe.getMessage());
-            MainActivity.runningActivity.stopAVRecordingService();
+            boolean toggleCamera = MainActivity.cameraWhichSpinner.getSelectedItemPosition() > 0;
+            boolean disableVideo = LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_ONLY;
+            rtmpCamera1 = new RtmpCamera1(AVRecordingService.videoPreviewView, this);
+            if(!rtmpCamera1.prepareAudio()) {
+                Log.e(TAG, "Unable to prepare RTMP audio for Facebook streaming.");
+                preemtivelyTerminateService();
+                return;
+            }
+            if (disableVideo) {
+                Log.i(TAG, "Disabling video");
+                rtmpCamera1.disableVideo();
+            }
+            else if(!rtmpCamera1.prepareVideo()) {
+                Log.e(TAG, "Unable to prepare RTMP video for Facebook streaming.");
+                preemtivelyTerminateService();
+                return;
+            }
+            if (toggleCamera) {
+                Log.i(TAG, "Toggling camera");
+                rtmpCamera1.switchCamera();
+            }
+        } catch(Exception e) {
+            Log.e(TAG, "Starting Facebook streaming service : " + e.getMessage());
+            preemtivelyTerminateService();
+            return;
         }
-        streamingClient = new RtspClient();
-        streamingClient.setSession(streamingSession);
-
-        String ip, port, path;
-        Pattern uri = Pattern.compile("rtmps://(.+):(\\d*)/(.+)");
-        Matcher match = uri.matcher(FBSTREAM_POSTURL);
-        match.find();
-        ip = match.group(1);
-        port = match.group(2);
-        path = match.group(3);
-
-        try {
-            streamingClient.setCredentials("", "");
-            streamingClient.setServerAddress(ip, Integer.parseInt(port));
-            streamingClient.setStreamPath("/" + path + FBSTREAM_SKEY);
-            streamingClient.startStream();
-        } catch(Exception ioe) {
-            Log.e(TAG, ioe.getMessage());
-            MainActivity.runningActivity.stopAVRecordingService();
-        }
+        rtmpCamera1.startStream(FBSTREAM_POSTURL + FBSTREAM_SKEY);
+        Log.i(TAG, "Created Facebook streaming service.");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         shuttingDown = true;
+        rtmpCamera1.stopPreview();
+        rtmpCamera1.stopRecord();
         rtmpCamera1.stopStream();
-        streamingSession = null;
-        streamingClient = null;
+        rtmpCamera1 = null;
     }
 
     private void preemtivelyTerminateService() {

@@ -411,7 +411,7 @@ public class MainActivity extends AppCompatActivity {
         else if(navAction.equals(PAUSE_RECORDING) && (AVRecordingService.isRecording() || mediaState == MEDIA_STATE_PLAYBACK_MODE)) {
             AVRecordingService.localService.pauseRecording();
         }
-        else if(navAction.equals(STOP_RECORDING) && (AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING)) {
+        else if(navAction.equals(STOP_RECORDING)) {
             stopAVRecordingService();
         }
         else if(navAction.equals(PLAYBACK_RECORDING) && mediaState == MEDIA_STATE_IDLE) {
