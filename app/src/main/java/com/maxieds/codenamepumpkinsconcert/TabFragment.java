@@ -32,6 +32,12 @@ import android.widget.SpinnerAdapter;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
+
 import java.util.Locale;
 
 /**
@@ -165,14 +171,26 @@ public class TabFragment extends Fragment {
             AVRecordingService.videoOptsFocus.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsScene.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
+
+            spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {}
+                public void onNothingSelected(AdapterView<?> adapterView) {}
+            };
+            AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
+            AVRecordingService.audioPlaybackOptsEffectType.setOnItemSelectedListener(spinnerItemSelectedListener);
+
         }
         else if(tabNumber == TAB_SETTINGS) {
+
             AVRecordingService.tvOutputFilePrefix = (TextView) inflatedView.findViewById(R.id.outputFilePrefixSetting);
             AVRecordingService.tvMaxFileSliceSize = (TextView) inflatedView.findViewById(R.id.maxFileSliceSizeSetting);
+            FacebookLiveStreamingService.tvPostURL = (TextView) inflatedView.findViewById(R.id.fbLiveStreamingPostURL);
+            FacebookLiveStreamingService.tvStreamKey = (TextView) inflatedView.findViewById(R.id.fbLiveStreamingStreamKey);
+            YouTubeStreamingService.tvBroadcastTitle = (TextView) inflatedView.findViewById(R.id.liveStreamTitle);
+
             AVRecordingService.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
             AVRecordingService.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
             AVRecordingService.videoPlaybackOptsContentType = (Spinner) inflatedView.findViewById(R.id.videoOptsContentTypeDesc);
-            AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
             AdapterView.OnItemSelectedListener spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                     if(AVRecordingService.localService != null) {
@@ -186,7 +204,47 @@ public class TabFragment extends Fragment {
             AVRecordingService.videoOptsRotation.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoOptsQuality.setOnItemSelectedListener(spinnerItemSelectedListener);
             AVRecordingService.videoPlaybackOptsContentType.setOnItemSelectedListener(spinnerItemSelectedListener);
-            AVRecordingService.audioPlaybackOptsEffectType.setOnItemSelectedListener(spinnerItemSelectedListener);
+
+            FacebookLiveStreamingService.streamingMediaTypeSpinner = (Spinner) inflatedView.findViewById(R.id.liveStreamingMediaTypeSpinner);
+            AdapterView.OnItemSelectedListener smtypeSpinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    if(i == 0) {
+                        FacebookLiveStreamingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_VIDEO;
+                    }
+                    else {
+                        FacebookLiveStreamingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_ONLY;
+                    }
+                }
+                public void onNothingSelected(AdapterView<?> adapterView) {
+                    return;
+                }
+            };
+
+            // setup the Facebook login button:
+            MainActivity.fbLoginButton = (LoginButton) inflatedView.findViewById(R.id.settingsFBLoginButton);
+            MainActivity.fbLoginCallback = CallbackManager.Factory.create();
+            MainActivity.fbLoginButton.registerCallback(MainActivity.fbLoginCallback, new FacebookCallback<LoginResult>() {
+                @Override
+                public void onSuccess(LoginResult loginResult) {
+                    FacebookLiveStreamingService.fbLoginResult = loginResult;
+                }
+                @Override
+                public void onCancel() {}
+                @Override
+                public void onError(FacebookException e) {}
+            });
+            MainActivity.fbInitialized = true;
+
+            MainActivity.cameraWhichSpinner = (Spinner) inflatedView.findViewById(R.id.liveStreamingWhichCameraSpinner);
+            MainActivity.streamingTypeSpinner = (Spinner) inflatedView.findViewById(R.id.liveStreamingMediaHighLevelProtocolSpinner);
+            YouTubeStreamingService.youtubePrivacySpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamPrivacyLevelSpinner);
+            YouTubeStreamingService.youtubeCDNSettingsSpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamCDNQualitySpinner);
+            YouTubeStreamingService.youtubeCDNSettingsSpinner.setSelection(3);
+            YouTubeStreamingService.youtubeIngestionTypeSpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamIngestionProtocolSpinner);
+
+            // restore configuration settings from previous runs of the application:
+            MainActivity.runningActivity.restoreConfiguration();
+
         }
         else if(tabNumber == TAB_ABOUT) {
 

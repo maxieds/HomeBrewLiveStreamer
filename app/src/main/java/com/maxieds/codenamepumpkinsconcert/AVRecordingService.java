@@ -613,10 +613,10 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     public boolean playbackMediaNow() {
         if(mPlayer == null)
             mPlayer = new MediaPlayer();
-        releaseCamera();
+        //releaseCamera();
         setupMediaPlayer();
-        mPlayer.setSurface(new Surface(videoPreview));
         mPlayer.prepareAsync();
+        mPlayer.setSurface(new Surface(videoPreview));
         Log.i(TAG, "Started Media Player.");
         return true;
     }

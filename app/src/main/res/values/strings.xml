@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Home Brew Live Streamer</string>
     <string name="action_settings">Settings</string>
+    <string name="configPrefsKey">HomeBrewLiveStreamerConfig</string>
+    <string name="facebook_app_id">YOUR-FACEBOOK-UNIQUE-ID</string>
+    <string name="FBStreamDefaultPostURL">rtmps://live-api-s.facebook.com:443/rtmp/</string>
+    <string name="FBStreamDefaultStreamKey">111111111111111?s_ps=1&amp;s_vt=api-s&amp;a=xxxxxXXXXX_YYYYY5</string>
 
     <string name="apphtmlheader">&lt;html>&lt;head>&lt;style>a { text-decoration: underline; color: %%ABOUTLINKCOLOR%%; font-weight: bold; font-style: italic; }&lt;/style>&lt;/head>&lt;body></string>
     <string name="apphtmlfooter">&lt;/body>&lt;/html></string>
@@ -196,7 +200,41 @@
         <item>TIME_LAPSE_2160P</item>
     </string-array>
 
+    <string-array name="LiveStreamMediaType">
+        <item>AUDIO-VIDEO</item>
+        <item>AUDIO-ONLY</item>
+    </string-array>
 
+    <string-array name="StreamingWhichCamera">
+        <item>CAMERA-BACK</item>
+        <item>CAMERA-FRONT</item>
+    </string-array>
+
+    <string-array name="LiveStreamingHighLevelProtocolType">
+        <item>YOUTUBE-LIVE-BROADCAST</item>
+        <item>FACEBOOK-LIVE-STREAM</item>
+        <item>DISABLED</item>
+    </string-array>
+
+    <string-array name="YouTubeLiveStreamPrivacySpec">
+        <item>private</item>
+        <item>unlisted</item>
+        <item>public</item>
+    </string-array>
+
+    <string-array name="YouTubeLiveStreamCDNQuality">
+        <item>240p</item>
+        <item>360p</item>
+        <item>480p</item>
+        <item>720p</item>
+        <item>1080p</item>
+        <item>1440p</item>
+    </string-array>
+
+    <string-array name="YouTubeLiveStreamIngestionType">
+        <item>rtmp</item>
+        <item>dash</item>
+    </string-array>
 
 
 

@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -15,10 +16,19 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 
 import static android.os.Process.killProcess;
 import static android.os.Process.myPid;
@@ -34,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int MEDIA_STATE_IDLE = 0;
     public static final int MEDIA_STATE_PLAYBACK_MODE = 1;
     public static final int MEDIA_STATE_RECORDING_MODE = 2;
+    public static final int MEDIA_STATE_STREAMING_MODE = 3;
     public static int mediaState = MEDIA_STATE_IDLE;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -45,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private static int selectedTab = TAB_LIVE_PANEL;
     private static ViewPager.OnPageChangeListener tabChangeListener = null;
     public static TextView tvLoggingMessages;
+    public static Spinner cameraWhichSpinner, streamingTypeSpinner;
     public static String DEFAULT_RECORDING_QUALITY = "SDMEDIUM";
     private static ServiceConnection recordServiceConn = new ServiceConnection() {
         public AVRecordingService recService;
@@ -57,8 +69,35 @@ public class MainActivity extends AppCompatActivity {
             recService = null;
         }
     };
+    private static ServiceConnection fbStreamServiceConn = new ServiceConnection() {
+        public FacebookLiveStreamingService streamingService;
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            Log.d("ServiceConnection","connected");
+            streamingService = (FacebookLiveStreamingService) binder;
+        }
+        public void onServiceDisconnected(ComponentName className) {
+            Log.d("ServiceConnection","disconnected");
+            streamingService = null;
+        }
+    };
+    private static ServiceConnection ytStreamServiceConn = new ServiceConnection() {
+        public YouTubeStreamingService streamingService;
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            Log.d("ServiceConnection","connected");
+            streamingService = (YouTubeStreamingService) binder;
+        }
+        public void onServiceDisconnected(ComponentName className) {
+            Log.d("ServiceConnection","disconnected");
+            streamingService = null;
+        }
+    };
     public static boolean setDoNotDisturb = true;
     public static boolean AVRECORD_SERVICE_RUNNING = false;
+    public static String streamServiceType = "";
+
+    public static LoginButton fbLoginButton;
+    public static CallbackManager fbLoginCallback;
+    public static boolean fbInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,7 +182,9 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.ACCESS_NOTIFICATION_POLICY",
                 "android.permission.BLUETOOTH",
                 "android.permission.WAKE_LOCK",
-                "android.permission.VIBRATE"
+                "android.permission.VIBRATE",
+                //"android.permission.ACCESS_NETWORK_STATE",
+                //"android.permission.GET_ACCOUNTS"
         };
         if (android.os.Build.VERSION.SDK_INT >= 23)
             requestPermissions(permissions, 200);
@@ -176,6 +217,16 @@ public class MainActivity extends AppCompatActivity {
         });
         RuntimeStats.updateStatsUI(false, true);
 
+        // initialize the Facebook API for the live streaming component of the application:
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        AppEventsLogger.activateApp(this);
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        fbLoginCallback.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -183,6 +234,10 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         if(intent == null)
             return;
+        else if(intent.getAction().equals("YOUTUBE_STREAM_STATUS_READY")) { // Display the YouTube live stream URL to the user:
+             String broadcastURL = intent.getStringExtra("broadcastURL");
+             Log.i(TAG, "TODO: Display the broadcast URL to the user : " + broadcastURL);
+        }
     }
 
     @Override
@@ -225,6 +280,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if(AVRecordingService.isRecording() || AVRECORD_SERVICE_RUNNING) {
@@ -233,7 +293,45 @@ public class MainActivity extends AppCompatActivity {
             notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
         }
         releaseWakeLock();
+        saveConfiguration();
         writeLoggingData("INFO", "Exiting application.");
+    }
+
+    public void restoreConfiguration() {
+        SharedPreferences configPrefs = getSharedPreferences(getString(R.string.configPrefsKey), Context.MODE_PRIVATE);
+        AVRecordingService.tvOutputFilePrefix.setText(configPrefs.getString("outputFilePrefix", "pumpkins-atlanta"));
+        AVRecordingService.tvMaxFileSliceSize.setText(configPrefs.getString("maxFileSliceSize", "1024"));
+        AVRecordingService.videoOptsQuality.setSelection(configPrefs.getInt("AVRecordingQualityIndex", 0));
+        YouTubeStreamingService.tvBroadcastTitle.setText(configPrefs.getString("broadcastTitle", "Home Brew Live Streamer"));
+        cameraWhichSpinner.setSelection(configPrefs.getInt("whichCameraIndex", 0));
+        streamingTypeSpinner.setSelection(configPrefs.getInt("streamingHighLevelProtocolIndex", 0));
+        AVRecordingService.videoPlaybackOptsContentType.setSelection(configPrefs.getInt("mediaContentTypeIndex", 0));
+        FacebookLiveStreamingService.streamingMediaTypeSpinner.setSelection(configPrefs.getInt("mediaAVTypeIndex", 0));
+        FacebookLiveStreamingService.tvPostURL.setText(configPrefs.getString("fbLiveStreamingURL", getString(R.string.FBStreamDefaultPostURL)));
+        FacebookLiveStreamingService.tvStreamKey.setText(configPrefs.getString("fbStreamKey", getString(R.string.FBStreamDefaultStreamKey)));
+        YouTubeStreamingService.youtubePrivacySpinner.setSelection(configPrefs.getInt("youtubePrivacyIndex", 0));
+        YouTubeStreamingService.youtubeCDNSettingsSpinner.setSelection(configPrefs.getInt("youtubeCDNIndex", 0));
+        YouTubeStreamingService.youtubeIngestionTypeSpinner.setSelection(configPrefs.getInt("youtubeIngestionTypeIndex", 0));
+    }
+
+    private void saveConfiguration() {
+        SharedPreferences configPrefs = getSharedPreferences(getString(R.string.configPrefsKey), Context.MODE_PRIVATE);
+        SharedPreferences.Editor cfgEditor = configPrefs.edit();
+        cfgEditor.putString("outputFilePrefix", AVRecordingService.tvOutputFilePrefix.getText().toString());
+        cfgEditor.putString("maxFileSliceSize", AVRecordingService.tvMaxFileSliceSize.getText().toString());
+        cfgEditor.putInt("AVRecordingQualityIndex", AVRecordingService.videoOptsQuality.getSelectedItemPosition());
+        cfgEditor.putInt("whichCameraIndex", cameraWhichSpinner.getSelectedItemPosition());
+        cfgEditor.putInt("streamingHighLevelProtocolIndex", streamingTypeSpinner.getSelectedItemPosition());
+        cfgEditor.putInt("mediaContentTypeIndex", AVRecordingService.videoPlaybackOptsContentType.getSelectedItemPosition());
+        cfgEditor.putString("broadcastTitle", YouTubeStreamingService.tvBroadcastTitle.getText().toString());
+        cfgEditor.putInt("mediaAVTypeIndex", FacebookLiveStreamingService.streamingMediaTypeSpinner.getSelectedItemPosition());
+        cfgEditor.putString("fbLiveStreamingURL", FacebookLiveStreamingService.tvPostURL.getText().toString());
+        cfgEditor.putString("fbStreamKey", FacebookLiveStreamingService.tvStreamKey.getText().toString());
+        cfgEditor.putInt("youtubePrivacyIndex", YouTubeStreamingService.youtubePrivacySpinner.getSelectedItemPosition());
+        cfgEditor.putInt("youtubeCDNIndex", YouTubeStreamingService.youtubeCDNSettingsSpinner.getSelectedItemPosition());
+        cfgEditor.putInt("youtubeIngestionTypeIndex", YouTubeStreamingService.youtubeIngestionTypeSpinner.getSelectedItemPosition());
+        //cfgEditor.clear();
+        cfgEditor.commit();
     }
 
     private boolean hasPermission(String permission) {
@@ -274,6 +372,10 @@ public class MainActivity extends AppCompatActivity {
 
         String navAction = ((Button) button).getTag().toString();
         boolean restartStatsTimer = false;
+        if(navAction.equals(STREAM_RECORDING)) {
+            streamServiceType = streamingTypeSpinner.getSelectedItem().toString();
+            Log.i(TAG, "About to start stream type: " + streamServiceType);
+        }
         if((navAction.equals(RECORD_VIDEO) || navAction.equals(RECORD_AUDIO)) && mediaState == MEDIA_STATE_IDLE) {
             if(!AVRecordingService.isRecording()) {
                 AVRecordingService.LOCAL_AVSETTING = navAction.equals(RECORD_VIDEO) ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
@@ -321,31 +423,71 @@ public class MainActivity extends AppCompatActivity {
             RuntimeStats.updateStatsUI(true, true);
             mediaState = MEDIA_STATE_PLAYBACK_MODE;
         }
-        else if(navAction.equals(STREAM_RECORDING)) {
-            writeLoggingData("INFO", "Navigation option \"STREAM\" is currently unsupported.");
+        else if(navAction.equals(STREAM_RECORDING) && streamServiceType.equals("FACEBOOK-LIVE-STREAM")) {
+            Log.i(TAG, "Inside the stream Facebook case ... about to start.");
+            FacebookLiveStreamingService.LOCAL_AVSETTING = FacebookLiveStreamingService.streamingMediaTypeSpinner.getSelectedItemPosition() == 0 ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
+            Intent startStreamingService = new Intent(this, FacebookLiveStreamingService.class);
+            startStreamingService.setAction(navAction);
+            startService(startStreamingService);
+            bindService(startStreamingService, fbStreamServiceConn, Context.BIND_AUTO_CREATE);
+            RuntimeStats.updateStatsUI(true, true);
+            mediaState = MEDIA_STATE_STREAMING_MODE;
+            Log.i(TAG, "Started Facebook streaming service.");
         }
-        if(AVRecordingService.getErrorState()) {
-            stopAVRecordingService();
-            Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
+        else if(navAction.equals(STREAM_RECORDING) && streamServiceType.equals("YOUTUBE-LIVE-BROADCAST")) {
+            Intent startStreamingService = new Intent(this, YouTubeStreamingService.class);
+            startStreamingService.setAction(navAction);
+            startService(startStreamingService);
+            bindService(startStreamingService, ytStreamServiceConn, Context.BIND_AUTO_CREATE);
+            RuntimeStats.updateStatsUI(true, true);
+            mediaState = MEDIA_STATE_STREAMING_MODE;
         }
+        //if(AVRecordingService.getErrorState()) {
+        //    stopAVRecordingService();
+        //    Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
+        //}
     }
 
     public void stopAVRecordingService() {
-        if(!AVRecordingService.isRecording() && !AVRECORD_SERVICE_RUNNING) {
-            Log.w(TAG, "AVRecordingService is NOT running ... Unable to stop it.");
-            return;
+        if(mediaState == MEDIA_STATE_RECORDING_MODE || mediaState == MEDIA_STATE_PLAYBACK_MODE) {
+            try {
+                Intent stopRecordingService = new Intent(this, AVRecordingService.class);
+                unbindService(recordServiceConn);
+                stopService(stopRecordingService);
+                releaseWakeLock();
+            } catch (Exception ise) {
+                Log.e(TAG, ise.getMessage());
+            }
+            RuntimeStats.clear();
+            mediaState = MEDIA_STATE_IDLE;
+            writeLoggingData("INFO", "Paused / stopped current recording and/or playback session.");
         }
-        try {
-            Intent stopRecordingService = new Intent(this, AVRecordingService.class);
-            unbindService(recordServiceConn);
-            stopService(stopRecordingService);
-            releaseWakeLock();
-        } catch(Exception ise) {
-            Log.e(TAG, ise.getMessage());
+        else if(mediaState == MEDIA_STATE_STREAMING_MODE && streamServiceType.equals("FACEBOOK-LIVE-STREAM")) {
+            try {
+                Intent stopStreamingService = new Intent(this, FacebookLiveStreamingService.class);
+                unbindService(fbStreamServiceConn);
+                stopService(stopStreamingService);
+                //releaseWakeLock();
+            } catch (Exception ise) {
+                Log.e(TAG, ise.getMessage());
+            }
+            RuntimeStats.clear();
+            mediaState = MEDIA_STATE_IDLE;
+            writeLoggingData("INFO", "Paused / stopped current facebook streaming session.");
         }
-        RuntimeStats.clear();
-        mediaState = MEDIA_STATE_IDLE;
-        writeLoggingData("INFO", "Paused / stopped current recording and/or playback session.");
+        else if(mediaState == MEDIA_STATE_STREAMING_MODE && streamServiceType.equals("YOUTUBE-LIVE-BROADCAST")) {
+            try {
+                Intent stopStreamingService = new Intent(this, YouTubeStreamingService.class);
+                unbindService(ytStreamServiceConn);
+                stopService(stopStreamingService);
+                //releaseWakeLock();
+            } catch (Exception ise) {
+                Log.e(TAG, ise.getMessage());
+            }
+            RuntimeStats.clear();
+            mediaState = MEDIA_STATE_IDLE;
+            writeLoggingData("INFO", "Paused / stopped current youtube streaming session.");
+        }
     }
 
     public static void writeLoggingData(String msgPrefix, String msg) {
