@@ -134,7 +134,7 @@ public class TabFragment extends Fragment {
             //AVRecordingService.videoPreviewView.setBackgroundDrawable(AVRecordingService.videoPreviewBGOverlay);
 
             TextView tvLoggingMessages = new TextView(MainActivity.runningActivity); //(TextView) inflatedView.findViewById(R.id.textLogging);
-            tvLoggingMessages.setTypeface(Typeface.MONOSPACE, Typeface.BOLD_ITALIC);
+            tvLoggingMessages.setTypeface(Typeface.MONOSPACE, Typeface.ITALIC);
             tvLoggingMessages.setAllCaps(true);
             tvLoggingMessages.setBreakStrategy(Layout.BREAK_STRATEGY_HIGH_QUALITY);
             tvLoggingMessages.setEllipsize(TextUtils.TruncateAt.MIDDLE);
@@ -160,6 +160,8 @@ public class TabFragment extends Fragment {
                     if(AVRecordingService.localService != null) {
                         AVRecordingService.localService.updateVideoFeedParams();
                     }
+                    ((TextView) view).setTextColor(getResources().getColor(R.color.colorAccent));
+                    ((TextView) view).setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
                 }
                 public void onNothingSelected(AdapterView<?> adapterView) {
                     return;
@@ -173,7 +175,10 @@ public class TabFragment extends Fragment {
             AVRecordingService.videoOptsWhiteBalance.setOnItemSelectedListener(spinnerItemSelectedListener);
 
             spinnerItemSelectedListener = new AdapterView.OnItemSelectedListener() {
-                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {}
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    ((TextView) view).setTextColor(getResources().getColor(R.color.colorAccent));
+                    ((TextView) view).setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
+                }
                 public void onNothingSelected(AdapterView<?> adapterView) {}
             };
             AVRecordingService.audioPlaybackOptsEffectType = (Spinner) inflatedView.findViewById(R.id.audioOptsPlaybackEffectsSpinner);
@@ -187,6 +192,7 @@ public class TabFragment extends Fragment {
             FacebookLiveStreamingService.tvPostURL = (TextView) inflatedView.findViewById(R.id.fbLiveStreamingPostURL);
             FacebookLiveStreamingService.tvStreamKey = (TextView) inflatedView.findViewById(R.id.fbLiveStreamingStreamKey);
             YouTubeStreamingService.tvBroadcastTitle = (TextView) inflatedView.findViewById(R.id.liveStreamTitle);
+            AVRecordingService.cbDNDWhileRecording = (CheckBox) inflatedView.findViewById(R.id.DNDWhileRecordingCheckBox);
 
             AVRecordingService.videoOptsRotation = (Spinner) inflatedView.findViewById(R.id.videoOptsRotationSpinner);
             AVRecordingService.videoOptsQuality = (Spinner) inflatedView.findViewById(R.id.videoOptsRecordingQuality);
@@ -196,6 +202,8 @@ public class TabFragment extends Fragment {
                     if(AVRecordingService.localService != null) {
                         AVRecordingService.localService.updateVideoFeedParams();
                     }
+                    ((TextView) view).setTextColor(getResources().getColor(R.color.colorAccent));
+                    ((TextView) view).setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
                 }
                 public void onNothingSelected(AdapterView<?> adapterView) {
                     return;
@@ -214,11 +222,14 @@ public class TabFragment extends Fragment {
                     else {
                         FacebookLiveStreamingService.LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_ONLY;
                     }
+                    ((TextView) view).setTextColor(getResources().getColor(R.color.colorAccent));
+                    ((TextView) view).setTypeface(Typeface.DEFAULT, Typeface.ITALIC);
                 }
                 public void onNothingSelected(AdapterView<?> adapterView) {
                     return;
                 }
             };
+            FacebookLiveStreamingService.streamingMediaTypeSpinner.setOnItemSelectedListener(smtypeSpinnerItemSelectedListener);
 
             // setup the Facebook login button:
             MainActivity.fbLoginButton = (LoginButton) inflatedView.findViewById(R.id.settingsFBLoginButton);
@@ -236,11 +247,16 @@ public class TabFragment extends Fragment {
             MainActivity.fbInitialized = true;
 
             MainActivity.cameraWhichSpinner = (Spinner) inflatedView.findViewById(R.id.liveStreamingWhichCameraSpinner);
+            MainActivity.cameraWhichSpinner.setOnItemSelectedListener(spinnerItemSelectedListener);
             MainActivity.streamingTypeSpinner = (Spinner) inflatedView.findViewById(R.id.liveStreamingMediaHighLevelProtocolSpinner);
+            MainActivity.streamingTypeSpinner.setOnItemSelectedListener(spinnerItemSelectedListener);
             YouTubeStreamingService.youtubePrivacySpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamPrivacyLevelSpinner);
+            YouTubeStreamingService.youtubePrivacySpinner.setOnItemSelectedListener(spinnerItemSelectedListener);
             YouTubeStreamingService.youtubeCDNSettingsSpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamCDNQualitySpinner);
+            YouTubeStreamingService.youtubeCDNSettingsSpinner.setOnItemSelectedListener(spinnerItemSelectedListener);
             YouTubeStreamingService.youtubeCDNSettingsSpinner.setSelection(3);
             YouTubeStreamingService.youtubeIngestionTypeSpinner = (Spinner) inflatedView.findViewById(R.id.youtubeStreamIngestionProtocolSpinner);
+            YouTubeStreamingService.youtubeIngestionTypeSpinner.setOnItemSelectedListener(spinnerItemSelectedListener);
 
             // restore configuration settings from previous runs of the application:
             MainActivity.runningActivity.restoreConfiguration();

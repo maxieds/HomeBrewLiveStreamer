@@ -25,6 +25,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.TextureView;
+import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -84,6 +85,7 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
     public static Spinner videoOptsFocus, videoOptsScene, videoOptsWhiteBalance, videoOptsRotation;
     public static Spinner videoOptsQuality, videoPlaybackOptsContentType, audioPlaybackOptsEffectType;
     public static TextView tvOutputFilePrefix, tvMaxFileSliceSize;
+    public static CheckBox cbDNDWhileRecording;
     public static PowerManager.WakeLock bgWakeLock;
 
     public AVRecordingService() {
@@ -118,7 +120,8 @@ public class AVRecordingService extends IntentService implements TextureView.Sur
         if(videoOptsQuality != null) {
             DEFAULT_AVQUALSPEC_ID = videoOptsQuality.getSelectedItem().toString();
         }
-        if(MainActivity.setDoNotDisturb) {
+        if(cbDNDWhileRecording.isChecked()) {
+            MainActivity.setDoNotDisturb = cbDNDWhileRecording.isChecked();
             NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             dndInterruptionPolicy = notifyManager.getCurrentInterruptionFilter();
             notifyManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);

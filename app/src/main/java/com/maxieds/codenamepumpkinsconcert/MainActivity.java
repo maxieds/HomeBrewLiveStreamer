@@ -1,5 +1,6 @@
 package com.maxieds.codenamepumpkinsconcert;
 
+import android.app.ActionBar;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,8 +15,11 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.support.v7.app.AppCompatActivity;
@@ -29,6 +33,8 @@ import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+
+import java.lang.reflect.Field;
 
 import static android.os.Process.killProcess;
 import static android.os.Process.myPid;
@@ -115,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setTitleMarginStart(0);
         toolbar.setPaddingRelative(0, 0, 0, 0);
         setSupportActionBar(toolbar);
+        TextView titleTextView = (TextView) toolbar.findViewById(R.id.toolbar_title);
+        titleTextView.setText(toolbar.getTitle());
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         viewPager = (ViewPager) findViewById(R.id.tab_pager);
         TabFragmentPagerAdapter tfPagerAdapter = new TabFragmentPagerAdapter(getSupportFragmentManager(), MainActivity.this);
@@ -301,6 +310,9 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences configPrefs = getSharedPreferences(getString(R.string.configPrefsKey), Context.MODE_PRIVATE);
         AVRecordingService.tvOutputFilePrefix.setText(configPrefs.getString("outputFilePrefix", "pumpkins-atlanta"));
         AVRecordingService.tvMaxFileSliceSize.setText(configPrefs.getString("maxFileSliceSize", "1024"));
+        boolean setDNDWhileRecording = configPrefs.getBoolean("setDNDWhileRecording", true);
+        setDoNotDisturb = setDNDWhileRecording;
+        AVRecordingService.cbDNDWhileRecording.setChecked(setDNDWhileRecording);
         AVRecordingService.videoOptsQuality.setSelection(configPrefs.getInt("AVRecordingQualityIndex", 0));
         YouTubeStreamingService.tvBroadcastTitle.setText(configPrefs.getString("broadcastTitle", "Home Brew Live Streamer"));
         cameraWhichSpinner.setSelection(configPrefs.getInt("whichCameraIndex", 0));
@@ -319,6 +331,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor cfgEditor = configPrefs.edit();
         cfgEditor.putString("outputFilePrefix", AVRecordingService.tvOutputFilePrefix.getText().toString());
         cfgEditor.putString("maxFileSliceSize", AVRecordingService.tvMaxFileSliceSize.getText().toString());
+        cfgEditor.putBoolean("setDNDWhileRecording", AVRecordingService.cbDNDWhileRecording.isChecked());
         cfgEditor.putInt("AVRecordingQualityIndex", AVRecordingService.videoOptsQuality.getSelectedItemPosition());
         cfgEditor.putInt("whichCameraIndex", cameraWhichSpinner.getSelectedItemPosition());
         cfgEditor.putInt("streamingHighLevelProtocolIndex", streamingTypeSpinner.getSelectedItemPosition());
