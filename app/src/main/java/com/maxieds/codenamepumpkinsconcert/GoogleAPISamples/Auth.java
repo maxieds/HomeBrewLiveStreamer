@@ -1,5 +1,8 @@
 package com.maxieds.codenamepumpkinsconcert.GoogleAPISamples;
 
+import android.telephony.TelephonyManager;
+import android.util.Log;
+
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.StoredCredential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -12,6 +15,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStore;
 import com.google.api.client.util.store.FileDataStoreFactory;
+import com.maxieds.codenamepumpkinsconcert.MainActivity;
+import com.maxieds.codenamepumpkinsconcert.R;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +28,8 @@ import java.util.List;
  * Shared class used by every sample. Contains methods for authorizing a user and caching credentials.
  */
 public class Auth {
+
+    private static final String TAG = Auth.class.getSimpleName();
 
     /**
      * Define a global instance of the HTTP transport.
@@ -48,20 +55,18 @@ public class Auth {
     public static Credential authorize(List<String> scopes, String credentialDatastore) throws IOException {
 
         // Load client secrets.
-        Reader clientSecretReader = new InputStreamReader(Auth.class.getResourceAsStream("/client_secrets.json"));
+        Reader clientSecretReader = new InputStreamReader(MainActivity.runningActivity.getResources().openRawResource(R.raw.client_secrets));
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, clientSecretReader);
 
         // Checks that the defaults have been replaced (Default = "Enter X here").
         if (clientSecrets.getDetails().getClientId().startsWith("Enter")
                 || clientSecrets.getDetails().getClientSecret().startsWith("Enter ")) {
-            System.out.println(
-                    "Enter Client ID and Secret from https://console.developers.google.com/project/_/apiui/credential "
-                            + "into src/main/resources/client_secrets.json");
-            System.exit(1);
+            Log.w(TAG, "Enter Client ID and Secret from https://console.developers.google.com/project/_/apiui/credential " +
+                       "into src/main/resources/client_secrets.json");
         }
 
         // This creates the credentials datastore at ~/.oauth-credentials/${credentialDatastore}
-        FileDataStoreFactory fileDataStoreFactory = new FileDataStoreFactory(new File(System.getProperty("user.home") + "/" + CREDENTIALS_DIRECTORY));
+        FileDataStoreFactory fileDataStoreFactory = new FileDataStoreFactory(new File(MainActivity.runningActivity.getFilesDir() + "/" + CREDENTIALS_DIRECTORY));
         DataStore<StoredCredential> datastore = fileDataStoreFactory.getDataStore(credentialDatastore);
 
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(

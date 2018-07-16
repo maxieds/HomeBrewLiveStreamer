@@ -33,6 +33,11 @@ import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInApi;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.tasks.Task;
 
 import java.lang.reflect.Field;
 
@@ -192,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                 "android.permission.BLUETOOTH",
                 "android.permission.WAKE_LOCK",
                 "android.permission.VIBRATE",
+                //"android.permission.READ_PHONE_STATE"
                 //"android.permission.ACCESS_NETWORK_STATE",
                 //"android.permission.GET_ACCOUNTS"
         };
@@ -234,8 +240,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        fbLoginCallback.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
+        if(FacebookSdk.isFacebookRequestCode(requestCode)) {
+            fbLoginCallback.onActivityResult(requestCode, resultCode, data);
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+        /*else if(requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> completedTask = GoogleSignIn.getSignedInAccountFromIntent(data);
+            googleSignInAcct = completedTask.getResult(ApiException.class);
+        }*/
     }
 
     @Override

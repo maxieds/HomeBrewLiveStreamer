@@ -1,5 +1,8 @@
 package com.maxieds.codenamepumpkinsconcert;
 
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -7,13 +10,21 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.google.android.gms.auth.api.signin.GoogleSignInApi;
+import com.google.api.client.auth.oauth.OAuthCredentialsResponse;
+import com.google.api.client.auth.oauth.OAuthGetAccessToken;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.auth.oauth2.OAuth2Utils;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
@@ -28,6 +39,8 @@ import com.maxieds.codenamepumpkinsconcert.GoogleAPISamples.Auth;
 
 import java.io.IOException;
 import java.util.List;
+
+import static android.accounts.AccountManager.get;
 
 public class YouTubeStreamingService extends IntentService {
 
@@ -69,11 +82,35 @@ public class YouTubeStreamingService extends IntentService {
         scopesList.add("https://www.googleapis.com/auth/youtube.force-ssl");
 
         try {
-            // Authorize the request.
-            Credential credential = Auth.authorize(scopesList, "createbroadcast");
+            // Authorize the request:
+
+            // TODO
+            //Credential credential = Auth.authorize(scopesList, "createbroadcast");
+            String authToken = AccountManager.get(getApplicationContext()).getAuthTokenByFeatures("com.google", "oauth2:https://gdata.youtube.com", null, MainActivity.runningActivity,
+                    null, null, new AccountManagerCallback<Bundle>() {
+                        @Override
+                        public void run(AccountManagerFuture<Bundle> future) {
+                            try {
+                                Bundle bundle = future.getResult();
+                                String acctName = bundle.getString(AccountManager.KEY_ACCOUNT_NAME);
+                                String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
+                                Log.d(TAG, "name: " + acctName + "; token: " + authToken);
+                            } catch (Exception e) {
+                                Log.e(TAG, e.getMessage());
+                            }
+                        }
+                    }, null).getResult().getString(AccountManager.KEY_AUTHTOKEN);
+            GoogleCredential gCred = new GoogleCredential().setAccessToken(authToken);
+            if(gCred == null) {
+                Log.e(TAG, "Invalid YouTube / Google Auth credential returned.");
+                stopSelf();
+                MainActivity.runningActivity.stopAVRecordingService();
+                return;
+            }
+            gCred.createScoped(scopesList);
 
             // This object is used to make YouTube Data API requests.
-            youtubeInst = new YouTube.Builder(Auth.HTTP_TRANSPORT, Auth.JSON_FACTORY, credential)
+            youtubeInst = new YouTube.Builder(Auth.HTTP_TRANSPORT, Auth.JSON_FACTORY, gCred)
                     .setApplicationName(getString(R.string.app_name))
                     .build();
 
