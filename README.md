@@ -20,7 +20,18 @@ This freeware application is available for Android phones on the Google Play Sto
 Please see our [Privacy Policy](https://github.com/maxieds/HomeBrewLiveStreamer/wiki/PrivacyPolicy) (required per Google Play Store listing) for information on how the application manages its usage of sensitive Android permissions. Signed APK binaries of the 
 application that can be installed on user Android devices are also incrementally available on the [releases page](https://github.com/maxieds/HomeBrewLiveStreamer/releases/latest) of this repository.
 
-## Future features
+## Features list
+
+The current release of the application supports the following features:
+
+* Recording of audio-only and audio-video files to the local Android device's internal memory (in ``Downloads/HomeBrewAVRecorder/*``). Due to restrictions on the Android permissions, the video stream recording must be performed with the device on and with the app in the foreground. However, the *audio-only* recording feature can be continued with the device in standby mode (i.e., with the screen turned off) so long as the app is in the foreground when the phone is switched off. This can save battery life when running the application for long periods of time to record background audio.
+* Live playback of the last recording media stored by the application. 
+* Various tools and effects for modifying the visual camera input from the device at recording time. 
+* Extensive (though certainly not yet exhaustive) settings list for configuring the application at runtime. 
+* Live streaming to *Facebook Live*. This has been tested by the developer and is known to work. 
+* **[UNTESTED]** Support for live streaming to *YouTube* streams of various types and privacy levels. 
+
+### Future features
 
 1. Live streaming from phone to friend devices via a Bit Torrent **magnet** stream link
 2. Editing of snapshot points in the audio / video with option for adding captions
