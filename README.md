@@ -16,7 +16,8 @@ feature set and have options for live streaming applications to friend devices o
 releases will include signed binary APKs for users to download and install without the need for 
 compiling the source in Android Studio. 
 
-Please see our [Privacy Policy](https://github.com/maxieds/HomeBrewLiveStreamer/wiki/PrivacyPolicy) (required per Google Play Store listing) for information on how the application manages its usage of sensitive Android permissions. This freeware application is available for Android phones on the Google Play Store [here](https://play.google.com/store/apps/details?id=com.maxieds.codenamepumpkinsconcert). 
+This freeware application is available for Android phones on the Google Play Store [here](https://play.google.com/store/apps/details?id=com.maxieds.codenamepumpkinsconcert). 
+Please see our [Privacy Policy](https://github.com/maxieds/HomeBrewLiveStreamer/wiki/PrivacyPolicy) (required per Google Play Store listing) for information on how the application manages its usage of sensitive Android permissions. 
 
 ## Future features
 
