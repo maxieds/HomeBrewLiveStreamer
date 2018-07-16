@@ -1,8 +1,6 @@
 # HomeBrewLiveStreamer
 
-<center>
 <img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/app/src/main/res/drawable/streaminglogo128.png" width="128" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/app/src/main/res/drawable/streaminglogo32.png" width="128" />
-</center>
 
 ## Application description
 
