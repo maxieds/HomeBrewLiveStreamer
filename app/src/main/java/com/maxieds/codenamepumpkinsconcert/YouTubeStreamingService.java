@@ -19,6 +19,10 @@ import android.widget.TextView;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
 import com.google.api.services.youtube.YouTube;
@@ -39,6 +43,16 @@ import java.util.List;
 public class YouTubeStreamingService extends IntentService implements ConnectCheckerRtmp {
 
     private static final String TAG = YouTubeStreamingService.class.getSimpleName();
+
+    /**
+     * Define a global instance of the HTTP transport.
+     */
+    public static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+
+    /**
+     * Define a global instance of the JSON factory.
+     */
+    public static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private static final int YTSTREAMING_SERVICE_PROCID = 97736161;
     public static final String NCHANNELID_SERVICE = "com.maxieds.codenamepumpkinsconcert.YouTubeStreamingService";
@@ -107,7 +121,7 @@ public class YouTubeStreamingService extends IntentService implements ConnectChe
             gCred.createScoped(scopesList);
 
             // This object is used to make YouTube Data API requests.
-            youtubeInst = new YouTube.Builder(Auth.HTTP_TRANSPORT, Auth.JSON_FACTORY, gCred)
+            youtubeInst = new YouTube.Builder(HTTP_TRANSPORT, JSON_FACTORY, gCred)
                     .setApplicationName(getString(R.string.app_name))
                     .build();
 
