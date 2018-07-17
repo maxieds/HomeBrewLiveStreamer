@@ -19,6 +19,7 @@ compiling the source in Android Studio.
 This freeware application is available for Android phones on the Google Play Store [here](https://play.google.com/store/apps/details?id=com.maxieds.codenamepumpkinsconcert). 
 Please see our [Privacy Policy](https://github.com/maxieds/HomeBrewLiveStreamer/wiki/PrivacyPolicy) (required per Google Play Store listing) for information on how the application manages its usage of sensitive Android permissions. Signed APK binaries of the 
 application that can be installed on user Android devices are also incrementally available on the [releases page](https://github.com/maxieds/HomeBrewLiveStreamer/releases/latest) of this repository.
+More complete documentation for the features of this application are found linked on the main wiki page [here](https://github.com/maxieds/HomeBrewLiveStreamer/wiki). 
 
 ## Features list
 
@@ -29,16 +30,9 @@ The current release of the application supports the following features:
 * Various tools and effects for modifying the visual camera input from the device at recording time. 
 * Extensive (though certainly not yet exhaustive) settings list for configuring the application at runtime. 
 * Live streaming to *Facebook Live*. This has been tested by the developer and is known to work. 
-* **[UNTESTED]** Support for live streaming to *YouTube* streams of various types and privacy levels. 
-
-### Future features
-
-1. Live streaming from phone to friend devices via a Bit Torrent **magnet** stream link
-2. Editing of snapshot points in the audio / video with option for adding captions
-3. More settings configurable in the *Settings* tab
-4. Better A/V playback options of recorded media 
+* **[SEMI-TESTED]** Support for live streaming to *YouTube* broadcasts of various types and privacy levels. 
 
 ## Screenshots
 
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180628-001510.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-105951.png" width="250" />
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-110010.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-110018.png" width="250" />
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205519.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205546.png" width="250" />
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205556.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205607.png" width="250" />
