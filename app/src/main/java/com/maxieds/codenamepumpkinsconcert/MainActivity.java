@@ -1,24 +1,34 @@
 package com.maxieds.codenamepumpkinsconcert;
 
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -110,6 +120,38 @@ public class MainActivity extends AppCompatActivity {
     public static CallbackManager fbLoginCallback;
     public static boolean fbInitialized = false;
 
+    private BroadcastReceiver youTubeURLReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("YOUTUBE_STREAM_STATUS_READY")) {
+                final String broadcastURL = intent.getStringExtra("broadcastURL");
+                TextView tvBroadcastURL = new TextView(MainActivity.runningActivity);
+                tvBroadcastURL.setText(broadcastURL);
+                tvBroadcastURL.setTextAppearance(MainActivity.runningActivity, R.style.SpinnerTheme);
+                AlertDialog.Builder adBuilder = new AlertDialog.Builder(MainActivity.runningActivity);
+                adBuilder.setTitle("YouTube Stream Broadcast URL");
+                adBuilder.setMessage("The live YouTube broadcast is being streamed to the following URL: ");
+                adBuilder.setView(tvBroadcastURL);
+                adBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                adBuilder.setNeutralButton("Copy URL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        ClipData urlClipEntry = ClipData.newPlainText("YOUTUBE_STREAMING_URL", broadcastURL);
+                        clipboard.setPrimaryClip(urlClipEntry);
+                    }
+                });
+                adBuilder.show();
+            }
+        }
+    };
+    private LocalBroadcastManager localBroadcastManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -129,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
         TextView titleTextView = (TextView) toolbar.findViewById(R.id.toolbar_title);
         titleTextView.setText(toolbar.getTitle());
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+        ImageView toolbarLogoRHS = (ImageView) toolbar.findViewById(R.id.toolbarLogoRHS);
+        toolbarLogoRHS.getDrawable().setBounds(toolbar.getLogo().getBounds());
 
         viewPager = (ViewPager) findViewById(R.id.tab_pager);
         TabFragmentPagerAdapter tfPagerAdapter = new TabFragmentPagerAdapter(getSupportFragmentManager(), MainActivity.this);
@@ -144,9 +188,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 if (position == TAB_COVERT_MODE) {
-                    getSupportActionBar().setTitle("");
-                    MainActivity.tabLayout.setVisibility(View.INVISIBLE);
-                    MainActivity.runningActivity.getSupportActionBar().setDisplayUseLogoEnabled(false);
+                    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+                    toolbar.setVisibility(View.INVISIBLE);
+                    ((GridLayout) findViewById(R.id.statsWindowGridLayout)).setVisibility(View.INVISIBLE);
+                    tabLayout.setVisibility(View.INVISIBLE);
                 }
                 else if(MainActivity.selectedTab == TAB_COVERT_MODE) {
                     actionButtonCovertModeToLive(null); // restore the navigation if the user flicks screens
@@ -236,6 +281,12 @@ public class MainActivity extends AppCompatActivity {
         FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(this);
 
+        // setup the handler to display the YouTube stream URL once it is obtained from the service:
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        IntentFilter bcIntentFilter = new IntentFilter();
+        bcIntentFilter.addAction("YOUTUBE_STREAM_STATUS_READY");
+        localBroadcastManager.registerReceiver(youTubeURLReceiver, bcIntentFilter);
+
     }
 
     @Override
@@ -245,10 +296,6 @@ public class MainActivity extends AppCompatActivity {
             fbLoginCallback.onActivityResult(requestCode, resultCode, data);
             super.onActivityResult(requestCode, resultCode, data);
         }
-        /*else if(requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> completedTask = GoogleSignIn.getSignedInAccountFromIntent(data);
-            googleSignInAcct = completedTask.getResult(ApiException.class);
-        }*/
     }
 
     @Override
@@ -256,10 +303,6 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         if(intent == null)
             return;
-        else if(intent.getAction().equals("YOUTUBE_STREAM_STATUS_READY")) { // Display the YouTube live stream URL to the user:
-             String broadcastURL = intent.getStringExtra("broadcastURL");
-             Log.i(TAG, "TODO: Display the broadcast URL to the user : " + broadcastURL);
-        }
     }
 
     @Override
@@ -275,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
                 //AVRecordingService.localService.videoPreviewOff();
             }
         }
-        else if(mediaState == MEDIA_STATE_PLAYBACK_MODE) {
+        else if(mediaState == MEDIA_STATE_PLAYBACK_MODE || mediaState == MEDIA_STATE_STREAMING_MODE) {
             stopAVRecordingService();
         }
         if(AVRECORD_SERVICE_RUNNING) {
@@ -295,6 +338,8 @@ public class MainActivity extends AppCompatActivity {
                 AVRecordingService.localService.initAVParams(false);
                 //AVRecordingService.localService.videoPreviewOn();
             }
+            AVRecordingService.videoPreview = new SurfaceTexture(0);
+            AVRecordingService.videoPreview.detachFromGLContext();
         }
         if(AVRECORD_SERVICE_RUNNING) {
             RuntimeStats.updateStatsUI(true, true);
@@ -315,6 +360,7 @@ public class MainActivity extends AppCompatActivity {
             notifyManager.setInterruptionFilter(AVRecordingService.dndInterruptionPolicy);
         }
         releaseWakeLock();
+        localBroadcastManager.unregisterReceiver(youTubeURLReceiver);
         saveConfiguration();
         writeLoggingData("INFO", "Exiting application.");
     }
@@ -380,11 +426,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void actionButtonCovertModeToLive(View button) {
-        getSupportActionBar().setTitle(getString(R.string.app_name));
-        viewPager.setCurrentItem(TAB_LIVE_PANEL);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setVisibility(View.VISIBLE);
+        ((GridLayout) findViewById(R.id.statsWindowGridLayout)).setVisibility(View.VISIBLE);
         tabLayout.setVisibility(View.VISIBLE);
-        getSupportActionBar().setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setLogo(R.drawable.streaminglogo32);
+        viewPager.setCurrentItem(TAB_LIVE_PANEL);
     }
 
     public static final String RECORD_VIDEO = "RECORD_VIDEO";
@@ -437,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
         else if(navAction.equals(PAUSE_RECORDING) && (AVRecordingService.isRecording() || mediaState == MEDIA_STATE_PLAYBACK_MODE)) {
             AVRecordingService.localService.pauseRecording();
         }
-        else if(navAction.equals(STOP_RECORDING)) {
+        else if(navAction.equals(PAUSE_RECORDING) || navAction.equals(STOP_RECORDING)) {
             stopAVRecordingService();
         }
         else if(navAction.equals(PLAYBACK_RECORDING) && mediaState == MEDIA_STATE_IDLE) {
@@ -450,7 +496,6 @@ public class MainActivity extends AppCompatActivity {
             mediaState = MEDIA_STATE_PLAYBACK_MODE;
         }
         else if(navAction.equals(STREAM_RECORDING) && streamServiceType.equals("FACEBOOK-LIVE-STREAM")) {
-            Log.i(TAG, "Inside the stream Facebook case ... about to start.");
             FacebookLiveStreamingService.LOCAL_AVSETTING = FacebookLiveStreamingService.streamingMediaTypeSpinner.getSelectedItemPosition() == 0 ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
             Intent startStreamingService = new Intent(this, FacebookLiveStreamingService.class);
             startStreamingService.setAction(navAction);
@@ -461,17 +506,15 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Started Facebook streaming service.");
         }
         else if(navAction.equals(STREAM_RECORDING) && streamServiceType.equals("YOUTUBE-LIVE-BROADCAST")) {
+            YouTubeStreamingService.LOCAL_AVSETTING = FacebookLiveStreamingService.streamingMediaTypeSpinner.getSelectedItemPosition() == 0 ? AVRecordingService.AVSETTING_AUDIO_VIDEO : AVRecordingService.AVSETTING_AUDIO_ONLY;
             Intent startStreamingService = new Intent(this, YouTubeStreamingService.class);
             startStreamingService.setAction(navAction);
             startService(startStreamingService);
             bindService(startStreamingService, ytStreamServiceConn, Context.BIND_AUTO_CREATE);
             RuntimeStats.updateStatsUI(true, true);
             mediaState = MEDIA_STATE_STREAMING_MODE;
+            Log.i(TAG, "Started YouTube streaming service.");
         }
-        //if(AVRecordingService.getErrorState()) {
-        //    stopAVRecordingService();
-        //    Log.e(TAG, "AVRecording service reached error state ... turned it back off completely");
-        //}
     }
 
     public void stopAVRecordingService() {
@@ -484,8 +527,9 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ise) {
                 Log.e(TAG, ise.getMessage());
             }
-            RuntimeStats.clear();
             mediaState = MEDIA_STATE_IDLE;
+            RuntimeStats.clear();
+            RuntimeStats.updateStatsUI(false, true);
             writeLoggingData("INFO", "Paused / stopped current recording and/or playback session.");
         }
         else if(mediaState == MEDIA_STATE_STREAMING_MODE && streamServiceType.equals("FACEBOOK-LIVE-STREAM")) {
@@ -497,8 +541,9 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ise) {
                 Log.e(TAG, ise.getMessage());
             }
-            RuntimeStats.clear();
             mediaState = MEDIA_STATE_IDLE;
+            RuntimeStats.clear();
+            RuntimeStats.updateStatsUI(false, true);
             writeLoggingData("INFO", "Paused / stopped current facebook streaming session.");
         }
         else if(mediaState == MEDIA_STATE_STREAMING_MODE && streamServiceType.equals("YOUTUBE-LIVE-BROADCAST")) {
@@ -510,8 +555,9 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception ise) {
                 Log.e(TAG, ise.getMessage());
             }
-            RuntimeStats.clear();
             mediaState = MEDIA_STATE_IDLE;
+            RuntimeStats.clear();
+            RuntimeStats.updateStatsUI(false, true);
             writeLoggingData("INFO", "Paused / stopped current youtube streaming session.");
         }
     }

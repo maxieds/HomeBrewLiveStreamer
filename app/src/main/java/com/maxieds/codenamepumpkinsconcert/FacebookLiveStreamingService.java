@@ -84,6 +84,8 @@ public class FacebookLiveStreamingService extends IntentService implements Conne
         FBSTREAM_POSTURL = MainActivity.runningActivity.getResources().getString(R.string.FBStreamDefaultPostURL);
         if(tvPostURL != null) {
             FBSTREAM_POSTURL = tvPostURL.getText().toString();
+            if(FBSTREAM_POSTURL.charAt(FBSTREAM_POSTURL.length() - 1) != '/')
+                FBSTREAM_POSTURL += "/";
         }
         FBSTREAM_SKEY = MainActivity.runningActivity.getResources().getString(R.string.FBStreamDefaultStreamKey);
         if(tvStreamKey != null) {

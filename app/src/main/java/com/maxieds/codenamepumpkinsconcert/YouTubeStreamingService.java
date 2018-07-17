@@ -17,14 +17,7 @@ import android.util.Log;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInApi;
-import com.google.api.client.auth.oauth.OAuthCredentialsResponse;
-import com.google.api.client.auth.oauth.OAuthGetAccessToken;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.auth.oauth2.OAuth2Utils;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.util.DateTime;
 import com.google.api.client.util.Lists;
@@ -33,16 +26,17 @@ import com.google.api.services.youtube.model.CdnSettings;
 import com.google.api.services.youtube.model.LiveBroadcast;
 import com.google.api.services.youtube.model.LiveStream;
 import com.google.api.services.youtube.model.LiveStreamSnippet;
-import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
-import com.maxieds.codenamepumpkinsconcert.GoogleAPISamples.Auth;
+import com.pedro.rtplibrary.rtmp.RtmpCamera1;
+
+import net.ossrs.rtmp.ConnectCheckerRtmp;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static android.accounts.AccountManager.get;
-
-public class YouTubeStreamingService extends IntentService {
+public class YouTubeStreamingService extends IntentService implements ConnectCheckerRtmp {
 
     private static final String TAG = YouTubeStreamingService.class.getSimpleName();
 
@@ -55,8 +49,14 @@ public class YouTubeStreamingService extends IntentService {
     private static LiveStream returnedLiveStream;
     private static YouTube.LiveStreams.Insert liveStreamInsert;
     private static String broadcastURL = "";
+    private static String liveStreamName = "";
+    private static String YOUTUBE_STREAMURL = "";
+    public static int LOCAL_AVSETTING = AVRecordingService.AVSETTING_AUDIO_VIDEO;
     public static TextView tvBroadcastTitle;
     public static Spinner youtubePrivacySpinner, youtubeCDNSettingsSpinner, youtubeIngestionTypeSpinner;
+    private boolean shuttingDown = false;
+
+    private static RtmpCamera1 rtmpCamera1;
 
     public YouTubeStreamingService() {
         super("YouTubeStreamingService");
@@ -76,15 +76,13 @@ public class YouTubeStreamingService extends IntentService {
         initNotifyChannel();
     }
 
-    public void startLiveBroadcast() {
+    public boolean startLiveBroadcast() {
 
         List<String> scopesList = Lists.newArrayList();
         scopesList.add("https://www.googleapis.com/auth/youtube.force-ssl");
 
         try {
             // Authorize the request:
-
-            // TODO
             //Credential credential = Auth.authorize(scopesList, "createbroadcast");
             String authToken = AccountManager.get(getApplicationContext()).getAuthTokenByFeatures("com.google", "oauth2:https://gdata.youtube.com", null, MainActivity.runningActivity,
                     null, null, new AccountManagerCallback<Bundle>() {
@@ -94,7 +92,7 @@ public class YouTubeStreamingService extends IntentService {
                                 Bundle bundle = future.getResult();
                                 String acctName = bundle.getString(AccountManager.KEY_ACCOUNT_NAME);
                                 String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-                                Log.d(TAG, "name: " + acctName + "; token: " + authToken);
+                                Log.d(TAG, "AcctName: " + acctName + "; AuthToken: " + authToken);
                             } catch (Exception e) {
                                 Log.e(TAG, e.getMessage());
                             }
@@ -103,9 +101,8 @@ public class YouTubeStreamingService extends IntentService {
             GoogleCredential gCred = new GoogleCredential().setAccessToken(authToken);
             if(gCred == null) {
                 Log.e(TAG, "Invalid YouTube / Google Auth credential returned.");
-                stopSelf();
-                MainActivity.runningActivity.stopAVRecordingService();
-                return;
+                preemtivelyTerminateService();
+                return false;
             }
             gCred.createScoped(scopesList);
 
@@ -115,12 +112,16 @@ public class YouTubeStreamingService extends IntentService {
                     .build();
 
             // Create a snippet with the title and scheduled start and end
-            // times for the broadcast. Currently, those times are hard-coded.
+            // times for the broadcast.
             String bcTitle = tvBroadcastTitle.getText().toString() + " -- " + Utils.getTimestamp();
             LiveBroadcastSnippet broadcastSnippet = new LiveBroadcastSnippet();
             broadcastSnippet.setTitle(bcTitle);
-            broadcastSnippet.setScheduledStartTime(new DateTime("2024-01-30T00:00:00.000Z"));
-            broadcastSnippet.setScheduledEndTime(new DateTime("2024-01-31T00:00:00.000Z"));
+
+            ZonedDateTime dateSpec = ZonedDateTime.now();
+            String projectedStartTime = dateSpec.format(DateTimeFormatter.ISO_INSTANT);
+            broadcastSnippet.setScheduledStartTime(new DateTime(projectedStartTime));
+            broadcastSnippet.setScheduledEndTime(new DateTime(projectedStartTime));
+
             LiveBroadcastStatus bcStatus = new LiveBroadcastStatus();
             bcStatus.setPrivacyStatus(youtubePrivacySpinner.getSelectedItem().toString());
 
@@ -152,42 +153,112 @@ public class YouTubeStreamingService extends IntentService {
             // Construct and execute the API request to insert the stream.
             liveStreamInsert = youtubeInst.liveStreams().insert("snippet,cdn", liveStream);
             returnedLiveStream = liveStreamInsert.execute();
-
+            if(returnedLiveStream == null) {
+                Log.e(TAG, "Returned Live Broadcast is NULL: " + liveStreamInsert.getLastStatusMessage());
+                Log.e(TAG, "Returned Live Broadcast is NULL: " + liveStreamInsert.getLastResponseHeaders());
+                preemtivelyTerminateService();
+                return false;
+            }
+            //returnedLiveStream.setStatus(new LiveStreamStatus().setStreamStatus("active")); // by default this should be live stream only
 
             // Construct and execute a request to bind the new broadcast
             // and stream.
             YouTube.LiveBroadcasts.Bind liveBroadcastBind =
                     youtubeInst.liveBroadcasts().bind(returnedLiveBroadcast.getId(), "id,contentDetails");
             liveBroadcastBind.setStreamId(returnedLiveStream.getId());
+            liveBroadcastBind.setPrettyPrint(true);
             returnedLiveBroadcast = liveBroadcastBind.execute();
-            returnedLiveBroadcast.getStatus().setRecordingStatus("notRecording"); // by default this should be live stream only
+            if(returnedLiveBroadcast == null) {
+                Log.e(TAG, "Returned Live Broadcast is NULL: " + liveBroadcastBind.getLastStatusMessage());
+                Log.e(TAG, "Returned Live Broadcast is NULL: " + liveBroadcastBind.getLastResponseHeaders());
+                preemtivelyTerminateService();
+                return false;
+            }
             broadcastURL = "https://www.youtube.com/watch?v=" + returnedLiveBroadcast.getId();
+            Log.i(TAG, "Now Beaming To: " + broadcastURL);
+
+            // setup the camera feed:
+            try {
+                liveStreamName = returnedLiveStream.getCdn().getIngestionInfo().getStreamName();
+                YOUTUBE_STREAMURL = returnedLiveStream.getCdn().getIngestionInfo().getIngestionAddress() + "/" + liveStreamName;
+            } catch(Exception npe) {
+                Log.e(TAG, "Getting CDN / Ingestion Info: " + npe.getMessage());
+                preemtivelyTerminateService();
+                return false;
+            }
+
+            try {
+                boolean toggleCamera = MainActivity.cameraWhichSpinner.getSelectedItemPosition() > 0;
+                boolean disableVideo = LOCAL_AVSETTING == AVRecordingService.AVSETTING_AUDIO_ONLY;
+                rtmpCamera1 = new RtmpCamera1(AVRecordingService.videoPreviewView, this);
+                if(!rtmpCamera1.prepareAudio()) {
+                    Log.e(TAG, "Unable to prepare RTMP audio for YouTube streaming.");
+                    preemtivelyTerminateService();
+                    return false;
+                }
+                if (disableVideo) {
+                    Log.i(TAG, "Disabling video");
+                    rtmpCamera1.disableVideo();
+                }
+                else if(!rtmpCamera1.prepareVideo()) {
+                    Log.e(TAG, "Unable to prepare RTMP video for YouTube streaming.");
+                    preemtivelyTerminateService();
+                    return false;
+                }
+                if (toggleCamera) {
+                    Log.i(TAG, "Toggling camera");
+                    rtmpCamera1.switchCamera();
+                }
+            } catch(Exception e) {
+                Log.e(TAG, "Starting YouTube streaming service : " + e.getMessage());
+                preemtivelyTerminateService();
+                return false;
+            }
+            rtmpCamera1.startStream(YOUTUBE_STREAMURL);
+            Log.i(TAG, "Created YouTube streaming service.");
 
             // have the MainActivity display a popup to the user with the effective URL of the string:
             Intent displayURLIntent = new Intent(getBaseContext(), MainActivity.class);
             displayURLIntent.setAction("YOUTUBE_STREAM_STATUS_READY");
             displayURLIntent.putExtra("broadcastURL", broadcastURL);
-            LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(displayURLIntent);
+            //LocalBroadcastManager.getInstance(MainActivity.runningActivity.getBaseContext()).sendBroadcast(displayURLIntent);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(displayURLIntent);
 
         } catch (GoogleJsonResponseException e) {
             Log.e(TAG, "GoogleJsonResponseException code: " + e.getDetails().getCode() + " : " + e.getDetails().getMessage());
             Log.e(TAG, Log.getStackTraceString(e));
+            preemtivelyTerminateService();
+            return false;
         } catch (IOException e) {
             Log.e(TAG, "IOException: " + e.getMessage());
             Log.e(TAG, Log.getStackTraceString(e));
+            preemtivelyTerminateService();
+            return false;
         } catch (Throwable t) {
             Log.e(TAG, "Throwable: " + t.getMessage());
             Log.e(TAG, Log.getStackTraceString(t));
+            preemtivelyTerminateService();
+            return false;
         }
-
+        return true;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        shuttingDown = true;
+        rtmpCamera1.stopPreview();
+        rtmpCamera1.stopRecord();
+        rtmpCamera1.stopStream();
+        rtmpCamera1 = null;;
         liveStreamInsert.clear();
         returnedLiveStream.clear();
         returnedLiveBroadcast.clear();
+    }
+
+    private void preemtivelyTerminateService() {
+        stopSelf();
+        MainActivity.runningActivity.stopAVRecordingService();
     }
 
     @Override
@@ -220,6 +291,36 @@ public class YouTubeStreamingService extends IntentService {
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .setContentIntent(pendingIntent);
         return fgNotify.build();
+    }
+
+    @Override
+    public void onConnectionSuccessRtmp() {
+        Log.i(TAG, "Successfully connected RTMP for YouTube streaming.");
+    }
+
+    @Override
+    public void onConnectionFailedRtmp(final String reason) {
+        Log.e(TAG, "Unable to connect RTMP for YouTube streaming.");
+        preemtivelyTerminateService();
+    }
+
+    @Override
+    public void onDisconnectRtmp() {
+        Log.i(TAG, "Disconnected to RTMP stream for YouTube");
+        if(!shuttingDown) {
+            preemtivelyTerminateService();
+        }
+    }
+
+    @Override
+    public void onAuthErrorRtmp() {
+        Log.e(TAG, "Authentication error with RTMP for YouTube.");
+        preemtivelyTerminateService();
+    }
+
+    @Override
+    public void onAuthSuccessRtmp() {
+        Log.i(TAG, "RTMP Auth successful for YouTube streaming.");
     }
 
 }

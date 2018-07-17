@@ -244,5 +244,9 @@ public class Utils {
         Log.e(TAG, Log.getStackTraceString(e));
     }
 
+    public static String getHexColorFromResource(int resID) {
+        return "#" + MainActivity.runningActivity.getResources().getString(resID).substring(3);
+    }
+
 
 }

@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="?colorPrimaryDark"
     tools:context=".MainActivity">
 
     <android.support.design.widget.AppBarLayout
@@ -25,17 +26,39 @@
             app:contentInsetStart="0dp"
             app:contentInsetEnd="0dp"
             app:contentInsetLeft="0dp"
-            app:contentInsetRight="0dp"
+            app:contentInsetRight="5dp"
             app:titleMargin="2dp"
-            android:background="@color/colorPrimary"
-            />
+            android:background="@color/colorPrimary">
+
+                <TextView
+                    android:id="@+id/toolbar_title"
+                    style="@style/titleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    />
+
+                <ImageView
+                    android:id="@+id/toolbarLogoRHS"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/toolbariconrhs"
+                    android:layout_margin="0dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="0dp"
+                    android:padding="0dp"
+                    android:layout_gravity="right|center_vertical" />
+
+        </android.support.v7.widget.Toolbar>
 
     </android.support.design.widget.AppBarLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="2dp"
-        android:background="@color/colorPrimaryDark" />
+        android:background="@color/colorPrimaryVeryDark" />
 
     <LinearLayout
         style="@style/AppTheme"
@@ -64,7 +87,7 @@
                 android:background="@color/colorAccent"
                 android:visibility="visible"
                 app:tabGravity="fill"
-                app:tabIndicatorColor="@color/colorPrimaryDark"
+                app:tabIndicatorColor="@color/colorPrimaryVeryDark"
                 app:tabIndicatorHeight="3dp"
                 app:tabMaxWidth="0dp"
                 app:tabMinWidth="0dp"
@@ -80,7 +103,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
-            android:background="@color/colorPrimaryDark" />
+            android:background="@color/colorPrimaryVeryDark" />
 
         <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:tools="http://schemas.android.com/tools"
@@ -96,7 +119,13 @@
 
     </LinearLayout>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/colorPrimaryVeryDark" />
+
     <GridLayout
+        android:id="@+id/statsWindowGridLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimaryDark"

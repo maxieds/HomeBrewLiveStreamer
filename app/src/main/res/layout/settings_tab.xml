@@ -1,156 +1,328 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:facebook="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
-        style="@style/SettingsHeaderText"
-        android:drawableLeft="@drawable/generalsettings16"
-        android:text="General Settings"/>
-
-    <GridLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="2"
-        android:padding="3dp"
-        android:layout_marginLeft="10dp"
-        android:layout_margin="0dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:singleLine="true"
-            android:text="Output File Prefix: " />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/outputFilePrefixSetting"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:singleLine="true"
-            android:text="pumpkins-atlanta"/>
+            <TextView
+                style="@style/SettingsHeaderText"
+                android:drawableLeft="@drawable/recordingsettings16"
+                android:text="Recording and Playback Options" />
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:singleLine="true"
-            android:text="Max File Slice Size (MB): " />
+            <GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                android:layout_marginLeft="10dp"
+                android:columnCount="2"
+                android:padding="3dp">
 
-        <EditText
-            android:id="@+id/maxFileSliceSizeSetting"
-            android:layout_width="250dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:singleLine="true"
-            android:text="1024"/>
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="Output File Prefix: " />
 
-    </GridLayout>
+                <EditText
+                    style="@style/SpinnerTheme"
+                    android:id="@+id/outputFilePrefixSetting"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:singleLine="true"
+                    android:text="pumpkins-atlanta" />
 
-    <TextView
-        style="@style/SettingsHeaderText"
-        android:drawableLeft="@drawable/recordingsettings16"
-        android:text="Recording Options"/>
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="Max File Slice Size (MB): " />
 
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="2"
-        android:padding="3dp"
-        android:layout_marginLeft="10dp"
-        android:layout_margin="0dp">
+                <EditText
+                    style="@style/SpinnerTheme"
+                    android:id="@+id/maxFileSliceSizeSetting"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:singleLine="true"
+                    android:text="1024" />
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:singleLine="true"
-            android:text="A/V Recording Quality: " />
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="A/V Recording Quality: " />
 
-        <Spinner
-            style="@style/SpinnerTheme"
-            android:id="@+id/videoOptsRecordingQuality"
-            android:layout_width="250dp"
-            android:layout_height="30dp"
-            android:layout_weight="1"
-            android:entries="@array/RecordingQualityVideoOptions"
-            android:gravity="right|center_vertical"
-            android:popupBackground="@color/colorAccentHighlight"
-            android:spinnerMode="dialog" />
+                <Spinner
+                    android:id="@+id/videoOptsRecordingQuality"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/RecordingQualityVideoOptions"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:layout_width="wrap_content"
-            android:singleLine="true"
-            android:text="Camera Rotation (Degrees): " />
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:layout_width="wrap_content"
+                    android:singleLine="true"
+                    android:text="Camera Rotation (Degrees): " />
 
-        <Spinner
-            style="@style/SpinnerTheme"
-            android:id="@+id/videoOptsRotationSpinner"
-            android:layout_width="250dp"
-            android:layout_height="30dp"
-            android:layout_weight="1"
-            android:entries="@array/RotationOrientationVideoOptions"
-            android:gravity="right|center_vertical"
-            android:popupBackground="@color/colorAccentHighlight"
-            android:spinnerMode="dialog" />
+                <Spinner
+                    android:id="@+id/videoOptsRotationSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/RotationOrientationVideoOptions"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
 
-    </GridLayout>
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Media Content Type: " />
 
-    <TextView
-        style="@style/SettingsHeaderText"
-        android:drawableLeft="@drawable/playbacksettings16"
-        android:text="Playback Options"
-        android:padding="3dp"
-        android:layout_marginLeft="10dp"
-        android:layout_margin="0dp"/>
+                <Spinner
+                    android:id="@+id/videoOptsContentTypeDesc"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/ContentTypeDescVideoPlaybackOptions"
+                    android:gravity="right|center_vertical"
+                    android:spinnerMode="dialog" />
 
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="2">
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Do Not Disturb Recording: " />
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:singleLine="true"
-            android:text="Media Content Type: " />
+                <CheckBox
+                    style="@style/CheckboxTheme"
+                    android:id="@+id/DNDWhileRecordingCheckBox"
+                    android:checked="true"
+                    android:text=""
+                    android:layout_gravity="right|center_horizontal"
+                    android:gravity="right|center_horizontal"
+                    android:paddingRight="10dp"
+                    />
 
-        <Spinner
-            style="@style/SpinnerTheme"
-            android:id="@+id/videoOptsContentTypeDesc"
-            android:layout_width="250dp"
-            android:layout_height="30dp"
-            android:layout_weight="1"
-            android:entries="@array/ContentTypeDescVideoPlaybackOptions"
-            android:gravity="right|center_vertical"
-            android:popupBackground="@color/colorAccentHighlight"
-            android:spinnerMode="dialog" />
+            </GridLayout>
 
-        <TextView
-            style="@style/SettingsLabelText"
-            android:layout_width="wrap_content"
-            android:singleLine="true"
-            android:text="Audio Playback Effects: " />
+            <TextView
+                style="@style/SettingsHeaderText"
+                android:drawableLeft="@drawable/streamingsettings16"
+                android:text="Live Streaming General Options" />
 
-        <Spinner
-            style="@style/SpinnerTheme"
-            android:id="@+id/audioOptsPlaybackEffectsSpinner"
-            android:layout_width="250dp"
-            android:layout_height="30dp"
-            android:layout_weight="1"
-            android:entries="@array/AudioEffectTypePlaybackOptions"
-            android:gravity="right|center_vertical"
-            android:popupBackground="@color/colorAccentHighlight"
-            android:spinnerMode="dialog" />
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2">
 
-    </GridLayout>
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="Live Stream Title: " />
 
-    <TextView
-        style="@style/SettingsHeaderText"
-        android:drawableLeft="@drawable/streamingsettings16"
-        android:text="Streaming Options (NOT YET IMPLEMENTED)"/>
+                <EditText
+                    style="@style/SpinnerTheme"
+                    android:id="@+id/liveStreamTitle"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:singleLine="true"
+                    android:text="Home Brew Live Streamer" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Streaming Media Type: " />
+
+                <Spinner
+                    android:id="@+id/liveStreamingMediaTypeSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/LiveStreamMediaType"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Video Camera: " />
+
+                <Spinner
+                    android:id="@+id/liveStreamingWhichCameraSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/StreamingWhichCamera"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Live Session Protocol Type: " />
+
+                <Spinner
+                    android:id="@+id/liveStreamingMediaHighLevelProtocolSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/LiveStreamingHighLevelProtocolType"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+            </GridLayout>
+
+            <TextView
+                style="@style/SettingsHeaderText"
+                android:drawableLeft="@drawable/facebooksettings16"
+                android:text="Facebook Live Streaming Options" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2">
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Live Streaming URL: " />
+
+                <EditText
+                    style="@style/SpinnerTheme"
+                    android:id="@+id/fbLiveStreamingPostURL"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:singleLine="true"
+                    android:text="@string/FBStreamDefaultPostURL" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Stream Key: " />
+
+                <EditText
+                    style="@style/SpinnerTheme"
+                    android:id="@+id/fbLiveStreamingStreamKey"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:singleLine="true"
+                    android:text="@string/FBStreamDefaultStreamKey" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Facebook Login: " />
+
+                <com.facebook.login.widget.LoginButton
+                    android:id="@+id/settingsFBLoginButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="5dp"
+                    android:textColor="?colorAccent"
+                    android:drawableTint="?colorAccent"
+                    android:drawableTintMode="src_in"
+                    android:background="?colorPrimaryDark"
+                    android:backgroundTint="?colorPrimaryDark"
+                    android:backgroundTintMode="src_in"
+                    android:layout_marginBottom="4dp"
+                    />
+
+            </GridLayout>
+
+            <TextView
+                style="@style/SettingsHeaderText"
+                android:drawableLeft="@drawable/youtubesettings16"
+                android:text="YouTube Live Broadcast Options" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2">
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Broadcast Privacy Level: " />
+
+                <Spinner
+                    android:id="@+id/youtubeStreamPrivacyLevelSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/YouTubeLiveStreamPrivacySpec"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="CDN Video Quality: " />
+
+                <Spinner
+                    android:id="@+id/youtubeStreamCDNQualitySpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/YouTubeLiveStreamCDNQuality"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+                <TextView
+                    style="@style/SettingsLabelText"
+                    android:singleLine="true"
+                    android:text="Ingestion Protocol: " />
+
+                <Spinner
+                    android:id="@+id/youtubeStreamIngestionProtocolSpinner"
+                    style="@style/SpinnerTheme"
+                    android:layout_width="250dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:entries="@array/YouTubeLiveStreamIngestionType"
+                    android:gravity="right|center_vertical"
+                    android:popupBackground="@color/colorAccentHighlight"
+                    android:spinnerMode="dialog" />
+
+            </GridLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </LinearLayout>

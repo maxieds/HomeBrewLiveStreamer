@@ -12,7 +12,7 @@
 
     <GridLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:columnCount="2">
 
         <TextView
@@ -113,6 +113,35 @@
             android:layout_height="30dp"
             android:layout_weight="1"
             android:entries="@array/WhiteBalanceVideoOptions"
+            android:gravity="right|center_vertical"
+            android:popupBackground="@color/colorAccentHighlight"
+            android:spinnerMode="dialog" />
+
+    </GridLayout>
+
+    <TextView
+        style="@style/SettingsHeaderText"
+        android:drawableLeft="@drawable/audiotools16"
+        android:text="Audio Playback Tools: " />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2">
+
+        <TextView
+            style="@style/SettingsLabelText"
+            android:layout_width="wrap_content"
+            android:singleLine="true"
+            android:text="Audio Playback Effects: " />
+
+        <Spinner
+            android:id="@+id/audioOptsPlaybackEffectsSpinner"
+            style="@style/SpinnerTheme"
+            android:layout_width="250dp"
+            android:layout_height="30dp"
+            android:layout_weight="1"
+            android:entries="@array/AudioEffectTypePlaybackOptions"
             android:gravity="right|center_vertical"
             android:popupBackground="@color/colorAccentHighlight"
             android:spinnerMode="dialog" />

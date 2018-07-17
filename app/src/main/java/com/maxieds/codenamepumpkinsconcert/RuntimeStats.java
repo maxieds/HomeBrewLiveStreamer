@@ -113,16 +113,26 @@ public class RuntimeStats {
 
     public static String[] getBannerStrings() {
         String recordMode = String.format("%s: %s", "Record Mode", getRecordingMode());
-        String duration = String.format("%s: %s", "Record Duration", getRecordingUptime());
+        String duration = String.format("%s: %s", "Duration", getRecordingUptime());
         String fileOutput = String.format("%s: %s", "File", getLoggingFilePath());
         String appStatusString = "";
         if(AVRecordingService.getErrorState())
             appStatusString = AVRecordingService.LAST_ERROR_MESSAGE;
-        else if(AVRecordingService.isPaused())
-            appStatusString = "PAUSED / ";
-        else if(AVRecordingService.isRecording())
-            appStatusString = "REC / ";
-        appStatusString += AVRecordingService.LAST_ERROR_MESSAGE;
+        else if((MainActivity.mediaState == MainActivity.MEDIA_STATE_RECORDING_MODE || MainActivity.mediaState == MainActivity.MEDIA_STATE_PLAYBACK_MODE) &&
+                AVRecordingService.isPaused())
+            appStatusString = "PAUSED / " + AVRecordingService.LAST_ERROR_MESSAGE;
+        else if(MainActivity.mediaState == MainActivity.MEDIA_STATE_IDLE)
+            appStatusString = "IDLE";
+        else if(MainActivity.mediaState == MainActivity.MEDIA_STATE_RECORDING_MODE)
+            appStatusString = "REC / " + AVRecordingService.LAST_ERROR_MESSAGE;
+        else if(MainActivity.mediaState == MainActivity.MEDIA_STATE_PLAYBACK_MODE)
+            appStatusString = "PLAY / " + AVRecordingService.LAST_ERROR_MESSAGE;
+        else if(MainActivity.mediaState == MainActivity.MEDIA_STATE_STREAMING_MODE && MainActivity.streamServiceType.equals("FACEBOOK-LIVE-STREAM"))
+            appStatusString = "STREAM / FB";
+        else if(MainActivity.mediaState == MainActivity.MEDIA_STATE_STREAMING_MODE && MainActivity.streamServiceType.equals("YOUTUBE-LIVE-BROADCAST"))
+            appStatusString = "STREAM / YT";
+        else
+            appStatusString = "UNKNOWN";
         String runtimeAlertStatus = String.format("%s: %s", AVRecordingService.getErrorState() ? "Error" : "Status", appStatusString);
         String memDisk = String.format("%s: %s", "Mem / Disk", getSpaceUsedRemaining());
         String battery = String.format("%s: %s", "Battery Used", getBatteryPercentUsed());

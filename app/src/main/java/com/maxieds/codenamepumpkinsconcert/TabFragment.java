@@ -131,6 +131,8 @@ public class TabFragment extends Fragment {
         else if(tabNumber == TAB_LIVE_PANEL) {
 
             AVRecordingService.videoPreviewView = (TextureView) inflatedView.findViewById(R.id.camera_preview);
+            AVRecordingService.videoPreview = new SurfaceTexture(0);
+            AVRecordingService.videoPreview.detachFromGLContext();
             AVRecordingService.videoPreviewView.setSurfaceTexture(AVRecordingService.videoPreview);
             AVRecordingService.videoPreviewBGOverlay = MainActivity.runningActivity.getResources().getDrawable(R.drawable.kitty256v5); // v6
             //AVRecordingService.videoPreviewView.setBackgroundDrawable(AVRecordingService.videoPreviewBGOverlay);
@@ -269,16 +271,18 @@ public class TabFragment extends Fragment {
             String rawAboutStr = MainActivity.runningActivity.getString(R.string.apphtmlheader);
             rawAboutStr += MainActivity.runningActivity.getString(R.string.AboutHTML);
             rawAboutStr += getString(R.string.apphtmlfooter);
-            rawAboutStr = rawAboutStr.replace("%%ABOUTLINKCOLOR%%", String.format("#%06x", MainActivity.runningActivity.getResources().getColor(R.color.colorAccent)));
             rawAboutStr = rawAboutStr.replace("%%appVersionName%%", MainActivity.runningActivity.getString(R.string.appVersionName));
             rawAboutStr = rawAboutStr.replace("%%appVersionCode%%", MainActivity.runningActivity.getString(R.string.appVersionCode));
             rawAboutStr = rawAboutStr.replace("%%appBuildConfig%%", MainActivity.runningActivity.getString(R.string.appBuildConfig));
             rawAboutStr = rawAboutStr.replace("%%appBuildTimestamp%%", MainActivity.runningActivity.getString(R.string.appBuildTimestamp));
+            rawAboutStr = rawAboutStr.replace("%%appBuildPackage%%", BuildConfig.APPLICATION_ID);
+            rawAboutStr = rawAboutStr.replace("%%ABOUTBGCOLOR%%", Utils.getHexColorFromResource(R.color.colorPrimary));
+            rawAboutStr = rawAboutStr.replace("%%ABOUTTEXTCOLOR%%", Utils.getHexColorFromResource(R.color.colorAccent));
+            rawAboutStr = rawAboutStr.replace("%%ABOUTLINKCOLOR%%", Utils.getHexColorFromResource(R.color.colorAccentHighlight));
 
             WebView wv = (WebView) inflatedView.findViewById(R.id.webViewAbout);
-            wv.getSettings().setJavaScriptEnabled(false);
             wv.loadDataWithBaseURL(null, rawAboutStr, "text/html", "UTF-8", "");
-            wv.setBackgroundColor(MainActivity.runningActivity.getTheme().obtainStyledAttributes(new int[] {R.color.colorAccentHighlight}).getColor(0, MainActivity.runningActivity.getResources().getColor(R.color.colorAccentHighlight)));
+            wv.getSettings().setJavaScriptEnabled(false);
             wv.getSettings().setLoadWithOverviewMode(true);
             wv.getSettings().setUseWideViewPort(true);
             wv.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
