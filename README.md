@@ -34,5 +34,5 @@ The current release of the application supports the following features:
 
 ## Screenshots
 
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205519.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205546.png" width="250" />
-<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205556.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205607.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-210228.png" width="250" />
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205519.png" width="250" /> <img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205546.png" width="250" />
+<img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205556.png" width="250" /><img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-205607.png" width="250" /> <img src="https://github.com/maxieds/HomeBrewLiveStreamer/blob/master/screenshots/Screenshot_20180716-210228.png" width="250" />
